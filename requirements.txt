@@ -1,0 +1,24 @@
+# ═══════════════════════════════════════════════
+# IMAGE UPSCALE AND ALL — requirements.txt
+# Install everything with:  pip install -r requirements.txt
+# ═══════════════════════════════════════════════
+
+# Web server
+flask==3.0.0
+flask-cors==4.0.0
+
+# Image processing (background removal, upscaling, enhancement)
+Pillow==10.2.0
+numpy==1.26.4
+rembg==2.0.50         # AI background removal — uses U2Net model
+onnxruntime==1.17.1   # Required by rembg
+
+# Audio stem splitting — Meta's AI model
+demucs==4.0.1         # Splits: vocals, drums, bass, other
+
+# Audio file handling
+pydub==0.25.1
+
+# Optional: better upscaling (uncomment if you want Real-ESRGAN)
+# basicsr==1.4.2
+# realesrgan==0.3.0
