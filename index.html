@@ -20,68 +20,59 @@
     <a onclick="goTool('bgr')" id="nav-bgr">BG REMOVER</a>
   </div>
   <div class="nav-right">
+    <!-- ONLINE USERS -->
+    <div class="online-box">
+      <span class="online-dot"></span>
+      <span>Online Users: <b id="online-count">1</b></span>
+    </div>
+    <!-- FREE TIMER -->
+    <div class="free-timer" id="free-timer">
+      🕐 Free: <b id="timer-display">3:00:00</b>
+    </div>
     <div class="theme-switcher">
       <div class="tdot on" style="background:#00e5ff" onclick="setTheme('theme-blue',this)"></div>
       <div class="tdot" style="background:#ff3b3b" onclick="setTheme('theme-red',this)"></div>
       <div class="tdot" style="background:#ffe600" onclick="setTheme('theme-yellow',this)"></div>
       <div class="tdot" style="background:#c97c3a" onclick="setTheme('theme-brown',this)"></div>
       <div class="tdot" style="background:#888" onclick="setTheme('theme-black',this)"></div>
-      <div class="tdot" style="background:#eee;border:1px solid #bbb" onclick="setTheme('theme-white',this)"></div>
     </div>
     <button class="btn-nav btn-login-nav" id="btn-login-nav" onclick="openLogin()">LOGIN</button>
     <button class="btn-nav btn-unlock-nav" id="btn-unlock-nav" onclick="openPricing()">🔓 UNLOCK</button>
-    <div class="uavatar" id="uavatar" onclick="openPricing()">
-      <img id="uimg" src="" alt=""/>
-    </div>
+    <div class="uavatar" id="uavatar" onclick="openPricing()"><img id="uimg" src="" alt=""/></div>
   </div>
 </nav>
 
-<!-- ═══════════════════════════════════
-     HOME PAGE — 4 Auto-Sliding Demos
-═══════════════════════════════════ -->
+<!-- ═══ HOME PAGE ═══ -->
 <div class="page active" id="page-home">
   <div class="hero">
     <h1>Image Upscale And All</h1>
-    <p>AI-Powered Free Tools — Login Required to Use</p>
+    <p>AI-Powered Free Tools — 3 Hours Free Daily</p>
   </div>
-
   <div class="home-demos">
-
-    <!-- 1. ENHANCER DEMO -->
     <div class="demo-block" onclick="goTool('enh')">
       <div class="demo-label-top">✨ IMAGE ENHANCER</div>
       <div class="auto-slider" id="demo-enh">
-        <div class="asl-img asl-before" style="background-image:url('https://i.pinimg.com/1200x/82/73/1b/82731bdfef25d5d1fd97eaa45b056948.jpg');filter:blur(2px) brightness(0.75) saturate(0.5)"></div>
-        <div class="asl-img asl-after"  style="background-image:url('https://i.pinimg.com/1200x/82/73/1b/82731bdfef25d5d1fd97eaa45b056948.jpg');filter:contrast(1.5) saturate(1.9) brightness(1.1)"></div>
+        <div class="asl-img asl-before" style="background-image:url('https://picsum.photos/seed/enh1/600/340')"></div>
+        <div class="asl-img asl-after" style="background-image:url('https://picsum.photos/seed/enh1/600/340');filter:contrast(1.6) saturate(2) brightness(1.12)"></div>
         <div class="asl-handle" id="handle-enh"></div>
         <div class="asl-labels"><span>ORIGINAL</span><span>✨ ENHANCED</span></div>
       </div>
-      <div class="demo-desc">Soft · Vivid · Sharp · HDR · ALL — HitPaw Level</div>
+      <div class="demo-desc">Soft · Vivid · Sharp · HDR · ALL</div>
     </div>
-
-    <!-- 2. UPSCALER DEMO -->
     <div class="demo-block" onclick="goTool('ups')">
       <div class="demo-label-top">🔬 IMAGE UPSCALER</div>
       <div class="auto-slider" id="demo-ups">
-        <div class="asl-img asl-before" style="background-image:url('https://i.pinimg.com/736x/29/f7/5f/29f75f7f7d9b361dbd2f1d5247516a65.jpg');filter:blur(5px) brightness(0.65)"></div>
-        <div class="asl-img asl-after"  style="background-image:url('https://i.pinimg.com/736x/29/f7/5f/29f75f7f7d9b361dbd2f1d5247516a65.jpg');filter:contrast(1.2) saturate(1.3) brightness(1.05)"></div>
+        <div class="asl-img asl-before" style="background-image:url('https://picsum.photos/seed/ups1/600/340');filter:blur(4px)"></div>
+        <div class="asl-img asl-after" style="background-image:url('https://picsum.photos/seed/ups1/600/340')"></div>
         <div class="asl-handle" id="handle-ups"></div>
         <div class="asl-labels"><span>2K BLURRY</span><span>8K CRYSTAL</span></div>
       </div>
-      <div class="demo-desc">2K · 4K · 6K · 8K · 10K crystal clear quality</div>
+      <div class="demo-desc">2K · 4K · 6K · 8K · 10K crystal clear</div>
     </div>
-
-    <!-- 3. STEM SPLITTER DEMO -->
     <div class="demo-block" onclick="goTool('stem')">
       <div class="demo-label-top">🎵 STEM SPLITTER</div>
-      <div class="stem-demo-wrap" id="demo-stem">
-        <!-- Left: Upload state -->
-        <div class="stem-upload-side" id="stem-demo-left">
-          <div class="stem-upload-icon">🎵</div>
-          <div class="stem-upload-text">Upload Song / Video</div>
-          <div class="stem-upload-hint">MP3 · MP4 · WAV</div>
-        </div>
-        <!-- Right: Result state (shown by slider) -->
+      <div class="stem-demo-wrap">
+        <div class="stem-upload-side"><div style="font-size:2.5rem">🎵</div><div style="font-weight:700">Upload Song / Video</div><div style="color:var(--muted);font-size:.8rem">MP3 · MP4 · WAV</div></div>
         <div class="stem-result-side" id="stem-demo-right">
           <div class="stem-mini-grid">
             <div class="stem-mini-card"><span>🎤</span><b>VOCALS</b></div>
@@ -91,50 +82,48 @@
           </div>
           <div class="stem-zip-btn">⬇ DOWNLOAD ZIP</div>
         </div>
-        <!-- Slider handle -->
         <div class="stem-handle" id="handle-stem"></div>
       </div>
-      <div class="demo-desc">Separate vocals, drums, bass & instruments — ZIP download</div>
+      <div class="demo-desc">Vocals · Drums · Bass · Instruments — ZIP</div>
     </div>
-
-    <!-- 4. BG REMOVER DEMO -->
     <div class="demo-block" onclick="goTool('bgr')">
       <div class="demo-label-top">✂️ BACKGROUND REMOVER</div>
       <div class="auto-slider" id="demo-bgr">
-        <div class="asl-img asl-before" style="background-image:url('https://i.pinimg.com/736x/f4/23/a1/f423a160569f182b2586ecd27ba8cce8.jpg')"></div>
-        <div class="asl-img asl-after"  id="bgr-demo-after" style="background-image:url('https://i.pinimg.com/736x/f4/23/a1/f423a160569f182b2586ecd27ba8cce8.jpg')"></div>
+        <div class="asl-img asl-before" style="background-image:url('https://picsum.photos/seed/bgr1/600/340')"></div>
+        <div class="asl-img asl-after" id="bgr-demo-after"></div>
         <div class="asl-handle" id="handle-bgr"></div>
         <div class="asl-labels"><span>ORIGINAL</span><span>✂️ BG REMOVED</span></div>
       </div>
-      <div class="demo-desc">AI removes background — transparent PNG download</div>
+      <div class="demo-desc">AI removes background — transparent PNG</div>
     </div>
-
-  </div><!-- end home-demos -->
+  </div>
 </div>
 
 <!-- ═══ ENHANCER PAGE ═══ -->
 <div class="page" id="page-enh">
   <div class="tool-page">
     <h2>✨ Image Enhancer</h2>
-    <p class="sub">HitPaw level — Select mode then upload</p>
-    <div class="lock-wall" id="lock-enh"><div class="licon">🔒</div><h3>LOGIN REQUIRED</h3><p>Please login to use this tool</p><button class="btn-dl" onclick="openLogin()">LOGIN NOW</button></div>
+    <p class="sub">HitPaw level — Real AI enhancement</p>
+    <div class="lock-wall" id="lock-enh"><div class="licon">🔒</div><h3>LOGIN REQUIRED</h3><button class="btn-dl" onclick="openLogin()">LOGIN NOW</button></div>
     <div id="tool-enh" style="display:none">
       <div class="mode-row">
-        <button class="mbtn on" onclick="selMode(this,'deblur')">🔍 REMOVE BLUR</button>
+        <button class="mbtn on" onclick="selMode(this,'soft')">🌸 Soft</button>
+        <button class="mbtn" onclick="selMode(this,'vivid')">🌈 Vivid</button>
+        <button class="mbtn" onclick="selMode(this,'sharp')">🔪 Sharp</button>
+        <button class="mbtn" onclick="selMode(this,'hdr')">💡 HDR</button>
+        <button class="mbtn" onclick="selMode(this,'all')">⚡ ALL</button>
       </div>
       <div class="upload-zone" onclick="document.getElementById('enh-in').click()" id="enh-zone" ondragover="dragOver(event,'enh-zone')" ondragleave="dragLeave('enh-zone')" ondrop="dropFile(event,'enh-in','enh-zone')">
         <input type="file" id="enh-in" accept="image/*" onchange="handleEnh(this)"/>
         <div class="uicon">✨</div><p><strong>Upload Image</strong></p><p class="uhint">JPG · PNG · WEBP</p>
       </div>
-      <div class="proc" id="enh-proc"><div class="pspin"></div><span>Enhancing image...</span></div>
+      <div class="proc" id="enh-proc"><div class="pspin"></div><span>Enhancing...</span></div>
       <div class="prev" id="enh-prev">
         <div class="compare-wrap">
           <div><div class="clabel">BEFORE</div><img id="enh-bef" src="" alt=""/></div>
           <div><div class="clabel ac">AFTER ✨</div><img id="enh-aft" src="" alt=""/></div>
         </div>
-        <div class="smsg ok" id="enh-msg">✅ Enhanced!</div>
-        <a id="enh-dl" download="enhanced.png"><button class="btn-dl">⬇ DOWNLOAD ENHANCED</button></a>
-        <p class="dl-hint">* IDM / browser download manager handle karega</p>
+        <a id="enh-dl" download="enhanced.png"><button class="btn-dl">⬇ DOWNLOAD</button></a>
       </div>
     </div>
   </div>
@@ -145,7 +134,7 @@
   <div class="tool-page">
     <h2>🔬 Image Upscaler</h2>
     <p class="sub">Select resolution → Upload → Download</p>
-    <div class="lock-wall" id="lock-ups"><div class="licon">🔒</div><h3>LOGIN REQUIRED</h3><p>Please login to use this tool</p><button class="btn-dl" onclick="openLogin()">LOGIN NOW</button></div>
+    <div class="lock-wall" id="lock-ups"><div class="licon">🔒</div><h3>LOGIN REQUIRED</h3><button class="btn-dl" onclick="openLogin()">LOGIN NOW</button></div>
     <div id="tool-ups" style="display:none">
       <div class="scale-row">
         <button class="sbtn on" onclick="selScale(this,'2K')">2K</button>
@@ -156,7 +145,7 @@
       </div>
       <div class="upload-zone" onclick="document.getElementById('ups-in').click()" id="ups-zone" ondragover="dragOver(event,'ups-zone')" ondragleave="dragLeave('ups-zone')" ondrop="dropFile(event,'ups-in','ups-zone')">
         <input type="file" id="ups-in" accept="image/*" onchange="handleUps(this)"/>
-        <div class="uicon">🔬</div><p><strong>Upload Image</strong></p><p class="uhint">Select resolution above then upload</p>
+        <div class="uicon">🔬</div><p><strong>Upload Image</strong></p>
       </div>
       <div class="proc" id="ups-proc"><div class="pspin"></div><span id="ups-pt">Upscaling...</span></div>
       <div class="prev" id="ups-prev">
@@ -164,9 +153,7 @@
           <div><div class="clabel">ORIGINAL</div><img id="ups-bef" src="" alt=""/></div>
           <div><div class="clabel ac">UPSCALED <span id="ups-badge">2K</span></div><img id="ups-aft" src="" alt=""/></div>
         </div>
-        <div class="smsg ok" id="ups-msg">✅ Upscaled!</div>
-        <a id="ups-dl" download="upscaled.png"><button class="btn-dl">⬇ DOWNLOAD UPSCALED</button></a>
-        <p class="dl-hint">* IDM / browser download manager handle karega</p>
+        <a id="ups-dl" download="upscaled.png"><button class="btn-dl">⬇ DOWNLOAD</button></a>
       </div>
     </div>
   </div>
@@ -176,24 +163,37 @@
 <div class="page" id="page-stem">
   <div class="tool-page">
     <h2>🎵 Stem Splitter</h2>
-    <p class="sub">Upload MP3 · MP4 · WAV → Get 4 stems in ZIP</p>
-    <div class="lock-wall" id="lock-stem"><div class="licon">🔒</div><h3>LOGIN REQUIRED</h3><p>Please login to use this tool</p><button class="btn-dl" onclick="openLogin()">LOGIN NOW</button></div>
+    <p class="sub">Upload WAV → 4 stems alag alag — Play & Download</p>
+    <div class="lock-wall" id="lock-stem"><div class="licon">🔒</div><h3>LOGIN REQUIRED</h3><button class="btn-dl" onclick="openLogin()">LOGIN NOW</button></div>
     <div id="tool-stem" style="display:none">
       <div class="upload-zone" onclick="document.getElementById('stem-in').click()" id="stem-zone" ondragover="dragOver(event,'stem-zone')" ondragleave="dragLeave('stem-zone')" ondrop="dropFile(event,'stem-in','stem-zone')">
-        <input type="file" id="stem-in" accept=".mp3,.mp4,.wav,audio/*,video/mp4" onchange="handleStem(this)"/>
-        <div class="uicon">🎵</div><p><strong>Upload Song / Video</strong></p><p class="uhint">MP3 · MP4 · WAV</p>
+        <input type="file" id="stem-in" accept=".mp3,.mp4,.wav,audio/*" onchange="handleStem(this)"/>
+        <div class="uicon">🎵</div><p><strong>Upload Song / Video</strong></p><p class="uhint">WAV · MP3 · MP4</p>
       </div>
       <div class="timer-wrap" id="stem-timer">
-        <div class="big-spin"><span class="cnt" id="stem-cnt">30</span></div>
+        <div class="big-spin"><span class="cnt" id="stem-cnt">45</span></div>
         <div class="tlabel">SEPARATING STEMS...</div>
         <div class="tsub">Vocals · Drums · Bass · Instruments</div>
       </div>
       <div class="prev" id="stem-prev">
+        <!-- WAVEFORM PLAYER -->
         <div class="waveform-player">
-          <div class="wf-track"><div class="wf-label"><span class="wf-name">Vocal</span><div class="wf-vol"><span>🔊</span><input type="range" min="0" max="1" step="0.01" value="1" oninput="setVol('sa-v',this.value)"/></div></div><div class="wf-canvas-wrap"><canvas id="cv-v" class="wf-canvas"></canvas><div class="wf-progress" id="pr-v"></div></div></div>
-          <div class="wf-track"><div class="wf-label"><span class="wf-name">Drum</span><div class="wf-vol"><span>🔊</span><input type="range" min="0" max="1" step="0.01" value="1" oninput="setVol('sa-d',this.value)"/></div></div><div class="wf-canvas-wrap"><canvas id="cv-d" class="wf-canvas"></canvas><div class="wf-progress" id="pr-d"></div></div></div>
-          <div class="wf-track"><div class="wf-label"><span class="wf-name">Bass</span><div class="wf-vol"><span>🔊</span><input type="range" min="0" max="1" step="0.01" value="1" oninput="setVol('sa-b',this.value)"/></div></div><div class="wf-canvas-wrap"><canvas id="cv-b" class="wf-canvas"></canvas><div class="wf-progress" id="pr-b"></div></div></div>
-          <div class="wf-track"><div class="wf-label"><span class="wf-name">Piano</span><div class="wf-vol"><span>🔊</span><input type="range" min="0" max="1" step="0.01" value="1" oninput="setVol('sa-i',this.value)"/></div></div><div class="wf-canvas-wrap"><canvas id="cv-i" class="wf-canvas"></canvas><div class="wf-progress" id="pr-i"></div></div></div>
+          <div class="wf-track" id="wf-vocals">
+            <div class="wf-label"><span class="wf-name">Vocal</span><div class="wf-vol"><span>🔊</span><input type="range" min="0" max="1" step="0.01" value="1" oninput="setVol('sa-v',this.value)"/></div></div>
+            <div class="wf-canvas-wrap" onclick="seekToClick(event,'sa-v')"><canvas id="cv-v" class="wf-canvas"></canvas><div class="wf-progress" id="pr-v"></div></div>
+          </div>
+          <div class="wf-track" id="wf-drums">
+            <div class="wf-label"><span class="wf-name">Drum</span><div class="wf-vol"><span>🔊</span><input type="range" min="0" max="1" step="0.01" value="1" oninput="setVol('sa-d',this.value)"/></div></div>
+            <div class="wf-canvas-wrap" onclick="seekToClick(event,'sa-d')"><canvas id="cv-d" class="wf-canvas"></canvas><div class="wf-progress" id="pr-d"></div></div>
+          </div>
+          <div class="wf-track" id="wf-bass">
+            <div class="wf-label"><span class="wf-name">Bass</span><div class="wf-vol"><span>🔊</span><input type="range" min="0" max="1" step="0.01" value="1" oninput="setVol('sa-b',this.value)"/></div></div>
+            <div class="wf-canvas-wrap" onclick="seekToClick(event,'sa-b')"><canvas id="cv-b" class="wf-canvas"></canvas><div class="wf-progress" id="pr-b"></div></div>
+          </div>
+          <div class="wf-track" id="wf-inst">
+            <div class="wf-label"><span class="wf-name">Piano</span><div class="wf-vol"><span>🔊</span><input type="range" min="0" max="1" step="0.01" value="1" oninput="setVol('sa-i',this.value)"/></div></div>
+            <div class="wf-canvas-wrap" onclick="seekToClick(event,'sa-i')"><canvas id="cv-i" class="wf-canvas"></canvas><div class="wf-progress" id="pr-i"></div></div>
+          </div>
           <div class="wf-time" id="wf-time">00:00 / 00:00</div>
           <div class="wf-controls">
             <button onclick="seekBack()">⏮ 15</button>
@@ -202,7 +202,7 @@
           </div>
         </div>
         <audio id="sa-v"></audio><audio id="sa-d"></audio><audio id="sa-b"></audio><audio id="sa-i"></audio>
-        <div class="smsg ok" style="margin-top:1rem">✅ Stems ready! Play preview then download ZIP.</div>
+        <div class="smsg ok">✅ Stems ready! Play karo — suno phir download karo!</div>
         <a id="stem-dl" download="stems.zip"><button class="btn-dl btn-big">⬇ DOWNLOAD ALL IN ONE ZIP</button></a>
         <p class="dl-hint">ZIP: vocals.wav · drums.wav · bass.wav · instruments.wav</p>
       </div>
@@ -214,14 +214,14 @@
 <div class="page" id="page-bgr">
   <div class="tool-page">
     <h2>✂️ Background Remover</h2>
-    <p class="sub">AI removes background — download transparent PNG</p>
-    <div class="lock-wall" id="lock-bgr"><div class="licon">🔒</div><h3>LOGIN REQUIRED</h3><p>Please login to use this tool</p><button class="btn-dl" onclick="openLogin()">LOGIN NOW</button></div>
+    <p class="sub">AI removes background — transparent PNG</p>
+    <div class="lock-wall" id="lock-bgr"><div class="licon">🔒</div><h3>LOGIN REQUIRED</h3><button class="btn-dl" onclick="openLogin()">LOGIN NOW</button></div>
     <div id="tool-bgr" style="display:none">
       <div class="upload-zone" onclick="document.getElementById('bgr-in').click()" id="bgr-zone" ondragover="dragOver(event,'bgr-zone')" ondragleave="dragLeave('bgr-zone')" ondrop="dropFile(event,'bgr-in','bgr-zone')">
         <input type="file" id="bgr-in" accept="image/*" onchange="handleBGR(this)"/>
-        <div class="uicon">🖼️</div><p><strong>Upload Image</strong></p><p class="uhint">JPG · PNG · WEBP</p>
+        <div class="uicon">🖼️</div><p><strong>Upload Image</strong></p>
       </div>
-      <div class="proc" id="bgr-proc"><div class="pspin"></div><span>Removing background with AI...</span></div>
+      <div class="proc" id="bgr-proc"><div class="pspin"></div><span>Removing background...</span></div>
       <div class="prev" id="bgr-prev">
         <div class="bg-slider-wrap" id="bgr-wrap">
           <div class="bg-orig" id="bgr-orig"></div>
@@ -236,11 +236,8 @@
           <div class="cbtn" style="background:#ff3b3b" onclick="setBG('#ff3b3b',this)"></div>
           <div class="cbtn" style="background:#00e5ff" onclick="setBG('#00e5ff',this)"></div>
           <div class="cbtn" style="background:#ffe600" onclick="setBG('#ffe600',this)"></div>
-          <div class="cbtn" style="background:#00ff88" onclick="setBG('#00ff88',this)"></div>
         </div>
-        <div class="smsg ok">✅ Background removed! Slide to compare.</div>
         <a id="bgr-dl" download="background-removed.png"><button class="btn-dl">⬇ DOWNLOAD PNG</button></a>
-        <p class="dl-hint">* Transparent PNG — IDM / browser download karega</p>
       </div>
     </div>
   </div>
@@ -252,13 +249,11 @@
     <button class="mclose" onclick="closeModal('login-modal')">✕</button>
     <h2 id="ltitle">WELCOME BACK</h2>
     <p id="lsub">Sign in to use all tools</p>
-    <!-- Google Sign In -->
     <button class="btn-google" onclick="googleSignIn()">
-      <svg width="20" height="20" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+      <svg width="20" height="20" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
       Sign in with Google
     </button>
     <div class="divider"><hr/><span>OR</span><hr/></div>
-
     <div id="lform">
       <div class="fg"><label>Email</label><input type="email" id="lemail" placeholder="you@email.com"/></div>
       <div class="fg"><label>Password</label><input type="password" id="lpass" placeholder="••••••••"/></div>
@@ -273,7 +268,7 @@
       <button class="btn-sub" onclick="doSignup()">CREATE ACCOUNT</button>
     </div>
     <div style="margin-top:1rem;text-align:center">
-      <span class="mtog" id="ltog" onclick="toggleForm()">Don't have an account? Sign Up</span>
+      <span class="mtog" id="ltog" onclick="toggleForm()">Don't have account? Sign Up</span>
     </div>
   </div>
 </div>
@@ -282,35 +277,18 @@
 <div class="overlay" id="price-modal">
   <div class="modal modal-wide">
     <button class="mclose" onclick="closeModal('price-modal')">✕</button>
-    <h2>UNLOCK PREMIUM</h2>
-    <p>All tools unlocked — Choose your plan!</p>
+    <h2>🔓 UNLOCK PREMIUM</h2>
+    <p>3 hours free khatam! Unlock karo lifetime access!</p>
     <div class="pgrid" id="plan-grid">
-      <div class="pcard" onclick="selectPlan('weekly','$50',this)">
-        <div class="period">WEEKLY</div><div class="amt">$50</div>
-        <div class="pdesc">7 days full access</div>
-        <button class="btn-pay">SELECT</button>
-      </div>
-      <div class="pcard feat" onclick="selectPlan('monthly','$100',this)">
-        <div class="period">MONTHLY ⭐</div><div class="amt">$100</div>
-        <div class="pdesc">30 days — Most Popular</div>
-        <button class="btn-pay">SELECT</button>
-      </div>
-      <div class="pcard" onclick="selectPlan('yearly','$200',this)">
-        <div class="period">YEARLY</div><div class="amt">$200</div>
-        <div class="pdesc">Full year access</div>
-        <button class="btn-pay">SELECT</button>
-      </div>
-      <div class="pcard" onclick="selectPlan('lifetime','$500',this)">
-        <div class="period">LIFETIME 💎</div><div class="amt">$500</div>
-        <div class="pdesc">One-time forever</div>
-        <button class="btn-pay">SELECT</button>
-      </div>
+      <div class="pcard" onclick="selectPlan('weekly','$50',this)"><div class="period">WEEKLY</div><div class="amt">$50</div><div class="pdesc">7 days</div><button class="btn-pay">SELECT</button></div>
+      <div class="pcard feat" onclick="selectPlan('monthly','$100',this)"><div class="period">MONTHLY ⭐</div><div class="amt">$100</div><div class="pdesc">Most Popular</div><button class="btn-pay">SELECT</button></div>
+      <div class="pcard" onclick="selectPlan('yearly','$200',this)"><div class="period">YEARLY</div><div class="amt">$200</div><div class="pdesc">Full year</div><button class="btn-pay">SELECT</button></div>
+      <div class="pcard" onclick="selectPlan('lifetime','$500',this)"><div class="period">LIFETIME 💎</div><div class="amt">$500</div><div class="pdesc">Forever</div><button class="btn-pay">SELECT</button></div>
     </div>
-    <!-- PAYMENT FORM -->
     <div class="pay-form" id="pay-form">
       <div class="pay-title" id="pay-plan-title">COMPLETE PAYMENT</div>
       <div class="fg"><label>Full Name</label><input type="text" id="pay-name" placeholder="Your full name"/></div>
-      <div class="fg"><label>Home Address</label><input type="text" id="pay-addr" placeholder="Street address"/></div>
+      <div class="fg"><label>Address</label><input type="text" id="pay-addr" placeholder="Street address"/></div>
       <div class="fg-row">
         <div class="fg"><label>City</label><input type="text" id="pay-city" placeholder="City"/></div>
         <div class="fg"><label>Country</label><input type="text" id="pay-country" placeholder="Country"/></div>
@@ -323,8 +301,18 @@
       <div class="fg"><label>Email</label><input type="email" id="pay-email" placeholder="Receipt email"/></div>
       <div class="merr" id="pay-err"></div>
       <button class="btn-sub" onclick="doPayment()">💳 COMPLETE PAYMENT</button>
-      <div style="margin-top:.8rem;color:var(--muted);font-size:.8rem;text-align:center">🔒 Secure payment — Your data is protected</div>
+      <div style="margin-top:.8rem;color:var(--muted);font-size:.8rem;text-align:center">🔒 Secure payment</div>
     </div>
+  </div>
+</div>
+
+<!-- ═══ TIME UP MODAL ═══ -->
+<div class="overlay" id="timeup-modal">
+  <div class="modal">
+    <h2>⏰ FREE TIME KHATAM!</h2>
+    <p style="color:var(--muted);margin-bottom:1.5rem">Teri 3 ghante ki free limit khatam ho gayi! Kal wapas aao ya unlock karo!</p>
+    <button class="btn-sub" onclick="closeModal('timeup-modal');openPricing()">🔓 UNLOCK NOW</button>
+    <div style="margin-top:1rem;color:var(--muted);font-size:.85rem">Kal subah 12 baje free time reset ho jaayega</div>
   </div>
 </div>
 
