@@ -8,7 +8,9 @@ let curScale   = '2K';
 let curMode    = 'soft';
 let isSU       = false;
 let curPlan    = null;
-const SIDHU_IMG = 'https://picsum.photos/seed/sidhu99/600/340';
+const IMG_ENH  = 'https://i.pinimg.com/1200x/82/73/1b/82731bdfef25d5d1fd97eaa45b056948.jpg';
+const IMG_UPS  = 'https://i.pinimg.com/736x/29/f7/5f/29f75f7f7d9b361dbd2f1d5247516a65.jpg';
+const IMG_BGR  = 'https://i.pinimg.com/736x/f4/23/a1/f423a160569f182b2586ecd27ba8cce8.jpg';
 
 // ── INIT ──
 window.onload = async () => {
