@@ -92,7 +92,6 @@ def require_login():
 # ── BG REMOVER ──
 @app.route('/remove-bg', methods=['POST'])
 def remove_background():
-    if not require_login(): return jsonify({'error':'Please login first'}), 401
     if 'image' not in request.files: return jsonify({'error':'No image'}), 400
     img_bytes = request.files['image'].read()
     result = rembg_remove(img_bytes) if HAS_REMBG else edge_bg_remove(Image.open(io.BytesIO(img_bytes)).convert('RGBA'))
@@ -109,7 +108,6 @@ def edge_bg_remove(img):
 # ── UPSCALER ──
 @app.route('/upscale', methods=['POST'])
 def upscale_image():
-    if not require_login(): return jsonify({'error':'Please login first'}), 401
     if 'image' not in request.files: return jsonify({'error':'No image'}), 400
     scale = request.form.get('scale','2K')
     tw = {'2K':2048,'4K':3840,'6K':5760,'8K':7680,'10K':9600}.get(scale,2048)
@@ -125,7 +123,6 @@ def upscale_image():
 # ── ENHANCER ──
 @app.route('/enhance', methods=['POST'])
 def enhance_image():
-    if not require_login(): return jsonify({'error':'Please login first'}), 401
     if 'image' not in request.files: return jsonify({'error':'No image'}), 400
     mode = request.form.get('mode','all')
     img = Image.open(request.files['image']).convert('RGB')
@@ -180,7 +177,6 @@ def enhance_image():
 # ── STEM SPLITTER ──
 @app.route('/split-stems', methods=['POST'])
 def split_stems():
-    if not require_login(): return jsonify({'error':'Please login first'}), 401
     if 'audio' not in request.files: return jsonify({'error':'No audio'}), 400
     file = request.files['audio']; filename = file.filename; raw = file.read()
     try:
