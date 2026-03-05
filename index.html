@@ -262,10 +262,8 @@ nav{position:fixed;top:0;left:0;right:0;z-index:1000;background:rgba(10,10,15,.9
     <div id="tool-enh" style="display:none">
       <div class="mode-row">
         <button class="mbtn on" onclick="selMode(this,'soft')">🌸 Soft</button>
-        <button class="mbtn" onclick="selMode(this,'vivid')">🌈 Vivid</button>
+        <button class="mbtn" onclick="selMode(this,'softv2')">🌸 Soft V2</button>
         <button class="mbtn" onclick="selMode(this,'sharp')">🔪 Sharp</button>
-        <button class="mbtn" onclick="selMode(this,'hdr')">💡 HDR</button>
-        <button class="mbtn" onclick="selMode(this,'all')">⚡ ALL</button>
       </div>
       <div class="upload-zone" onclick="document.getElementById('enh-in').click()" id="enh-zone" ondragover="dragOver(event,'enh-zone')" ondragleave="dragLeave('enh-zone')" ondrop="dropFile(event,'enh-in','enh-zone')">
         <input type="file" id="enh-in" accept="image/*" onchange="handleEnh(this)"/>
