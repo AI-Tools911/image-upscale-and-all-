@@ -12,27 +12,26 @@ except ImportError:
 
 app = Flask(__name__, static_folder='.', static_url_path='')
 app.secret_key = 'iua-secret-key-2024'
-CORS(app, supports_credentials=True)
+app.config['SESSION_COOKIE_SAMESITE'] = 'None'
+app.config['SESSION_COOKIE_SECURE'] = True
+CORS(app, supports_credentials=True, origins='*')
 
 USERS = {}
-ONLINE = {}  # session_id: last_seen timestamp
+ONLINE = {}
 
 def hash_pass(p): return hashlib.sha256(p.encode()).hexdigest()
 
-# ── ONLINE USERS ──
 @app.before_request
 def track_online():
+    import uuid
     sid = session.get('_id')
     if not sid:
-        import uuid
         session['_id'] = str(uuid.uuid4())
         sid = session['_id']
     ONLINE[sid] = time.time()
-    # Remove users inactive for 2 min
     cutoff = time.time() - 120
     for k in list(ONLINE.keys()):
-        if ONLINE[k] < cutoff:
-            del ONLINE[k]
+        if ONLINE[k] < cutoff: del ONLINE[k]
 
 @app.route('/api/online')
 def online_count():
@@ -43,7 +42,6 @@ def online_count():
 @app.route('/')
 def index(): return app.send_static_file('index.html')
 
-# ── AUTH ──
 @app.route('/api/signup', methods=['POST'])
 def signup():
     d = request.json
@@ -60,7 +58,8 @@ def signup():
 @app.route('/api/login', methods=['POST'])
 def login():
     d = request.json
-    email = d.get('email','').lower().strip(); pwd = d.get('password','')
+    email = d.get('email','').lower().strip()
+    pwd = d.get('password','')
     user = USERS.get(email)
     if not user or user['password'] != hash_pass(pwd):
         return jsonify({'error':'Wrong email or password'}), 401
@@ -68,14 +67,16 @@ def login():
     return jsonify({'success':True,'name':user['name'],'plan':user.get('plan','free')})
 
 @app.route('/api/logout', methods=['POST'])
-def logout(): session.pop('user',None); return jsonify({'success':True})
+def logout():
+    session.pop('user', None)
+    return jsonify({'success':True})
 
 @app.route('/api/me')
 def me():
     email = session.get('user')
     if not email or email not in USERS: return jsonify({'loggedIn':False})
     u = USERS[email]
-    return jsonify({'loggedIn':True,'name':u['name'],'plan':u.get('plan','free'),'joined':u.get('joined',0)})
+    return jsonify({'loggedIn':True,'name':u['name'],'plan':u.get('plan','free')})
 
 @app.route('/api/unlock', methods=['POST'])
 def unlock():
@@ -85,12 +86,13 @@ def unlock():
     return jsonify({'success':True})
 
 def require_login():
-    e = session.get('user'); return e if e and e in USERS else None
+    e = session.get('user')
+    return e if e and e in USERS else None
 
 # ── BG REMOVER ──
 @app.route('/remove-bg', methods=['POST'])
 def remove_background():
-    if not require_login(): return jsonify({'error':'login'}), 401
+    if not require_login(): return jsonify({'error':'Please login first'}), 401
     if 'image' not in request.files: return jsonify({'error':'No image'}), 400
     img_bytes = request.files['image'].read()
     result = rembg_remove(img_bytes) if HAS_REMBG else edge_bg_remove(Image.open(io.BytesIO(img_bytes)).convert('RGBA'))
@@ -107,7 +109,7 @@ def edge_bg_remove(img):
 # ── UPSCALER ──
 @app.route('/upscale', methods=['POST'])
 def upscale_image():
-    if not require_login(): return jsonify({'error':'login'}), 401
+    if not require_login(): return jsonify({'error':'Please login first'}), 401
     if 'image' not in request.files: return jsonify({'error':'No image'}), 400
     scale = request.form.get('scale','2K')
     tw = {'2K':2048,'4K':3840,'6K':5760,'8K':7680,'10K':9600}.get(scale,2048)
@@ -120,74 +122,55 @@ def upscale_image():
     buf = io.BytesIO(); up.save(buf,'PNG'); buf.seek(0)
     return send_file(buf, mimetype='image/png', as_attachment=True, download_name=f'upscaled-{scale}.png')
 
-# ── ENHANCER — Real Quality ──
+# ── ENHANCER ──
 @app.route('/enhance', methods=['POST'])
 def enhance_image():
-    if not require_login(): return jsonify({'error':'login'}), 401
+    if not require_login(): return jsonify({'error':'Please login first'}), 401
     if 'image' not in request.files: return jsonify({'error':'No image'}), 400
     mode = request.form.get('mode','all')
     img = Image.open(request.files['image']).convert('RGB')
     arr = np.array(img).astype(np.float32)
 
     if mode == 'soft':
-        # Natural skin tone enhancement
         arr = np.clip(np.power(arr/255.0, 0.9)*255.0, 0, 255)
         img = Image.fromarray(arr.astype(np.uint8))
         img = ImageEnhance.Color(img).enhance(1.25)
         img = ImageEnhance.Contrast(img).enhance(1.15)
         img = ImageEnhance.Sharpness(img).enhance(2.0)
         img = img.filter(ImageFilter.SMOOTH)
-
     elif mode == 'vivid':
-        # Deep color punch
         arr = np.clip(np.power(arr/255.0, 0.85)*255.0, 0, 255)
         img = Image.fromarray(arr.astype(np.uint8))
         img = ImageEnhance.Color(img).enhance(2.2)
         img = ImageEnhance.Contrast(img).enhance(1.4)
         img = ImageEnhance.Sharpness(img).enhance(2.5)
         img = img.filter(ImageFilter.DETAIL)
-
     elif mode == 'sharp':
-        # Maximum unsharp masking
         img = ImageEnhance.Sharpness(img).enhance(5.0)
         img = img.filter(ImageFilter.SHARPEN)
         img = img.filter(ImageFilter.SHARPEN)
         img = img.filter(ImageFilter.EDGE_ENHANCE_MORE)
         img = ImageEnhance.Contrast(img).enhance(1.3)
-        img = ImageEnhance.Color(img).enhance(1.1)
-
     elif mode == 'hdr':
-        # Local contrast + tone mapping
         arr = arr / 255.0
-        # Shadow lift + highlight compression
-        arr = np.where(arr < 0.5,
-                       arr * 1.3,
-                       1.0 - (1.0-arr)*0.7)
+        arr = np.where(arr < 0.5, arr * 1.3, 1.0 - (1.0-arr)*0.7)
         arr = np.clip(arr*255.0, 0, 255)
         img = Image.fromarray(arr.astype(np.uint8))
         img = ImageEnhance.Contrast(img).enhance(1.6)
         img = ImageEnhance.Color(img).enhance(1.8)
         img = ImageEnhance.Sharpness(img).enhance(2.0)
-
-    else:  # ALL — HitPaw level
-        # Step 1: Denoise simulation (slight smooth then sharpen)
+    else:
         img = img.filter(ImageFilter.SMOOTH)
-        # Step 2: Tone curve — lift shadows, preserve highlights
         arr = np.array(img).astype(np.float32) / 255.0
-        arr = np.where(arr < 0.5,
-                       arr * 1.25,
-                       1.0 - (1.0-arr)*0.85)
+        arr = np.where(arr < 0.5, arr * 1.25, 1.0 - (1.0-arr)*0.85)
         arr = np.clip(arr*255.0, 0, 255)
         img = Image.fromarray(arr.astype(np.uint8))
-        # Step 3: Color boost
         img = ImageEnhance.Color(img).enhance(1.8)
         img = ImageEnhance.Contrast(img).enhance(1.4)
-        # Step 4: Sharpness
         img = ImageEnhance.Sharpness(img).enhance(4.5)
         img = img.filter(ImageFilter.DETAIL)
         img = img.filter(ImageFilter.SHARPEN)
         img = img.filter(ImageFilter.EDGE_ENHANCE)
-        # Step 5: Final color correction
         img = ImageEnhance.Color(img).enhance(1.2)
         img = ImageEnhance.Brightness(img).enhance(1.05)
 
@@ -197,12 +180,12 @@ def enhance_image():
 # ── STEM SPLITTER ──
 @app.route('/split-stems', methods=['POST'])
 def split_stems():
-    if not require_login(): return jsonify({'error':'login'}), 401
+    if not require_login(): return jsonify({'error':'Please login first'}), 401
     if 'audio' not in request.files: return jsonify({'error':'No audio'}), 400
     file = request.files['audio']; filename = file.filename; raw = file.read()
     try:
         samples, sr = read_wav_data(raw)
-        if samples is None: raise Exception('Upload WAV format')
+        if samples is None: raise Exception('Please upload WAV format')
         v, d, b, ins = fft_split(samples, sr)
         zip_buf = io.BytesIO()
         with zipfile.ZipFile(zip_buf,'w',zipfile.ZIP_DEFLATED) as zf:
@@ -255,6 +238,6 @@ def make_wav(samples, sr):
     return buf.getvalue()
 
 if __name__=='__main__':
-    port = int(os.environ.get('PORT',8080))
-    print(f"🚀 Starting on port {port}")
+    port = int(os.environ.get('PORT', 8080))
+    print(f"Starting on port {port}")
     app.run(host='0.0.0.0', port=port)
