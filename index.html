@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <title>Image Upscale And All</title>
 <link rel="stylesheet" href="style.css"/>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet"/>
@@ -14,178 +14,164 @@
   <div class="nav-logo">⚡ Image Upscale And All</div>
   <div class="nav-links">
     <a onclick="showPage('home')" class="active" id="nav-home">HOME</a>
-    <a onclick="showPage('bgremover')" id="nav-bgremover">BG REMOVER</a>
-    <a onclick="showPage('upscaler')" id="nav-upscaler">UPSCALER</a>
-    <a onclick="showPage('stem')" id="nav-stem">STEM SPLITTER</a>
-    <a onclick="showPage('enhancer')" id="nav-enhancer">ENHANCER</a>
+    <a onclick="goTool('enh')" id="nav-enh">ENHANCER</a>
+    <a onclick="goTool('ups')" id="nav-ups">UPSCALER</a>
+    <a onclick="goTool('stem')" id="nav-stem">STEM SPLITTER</a>
+    <a onclick="goTool('bgr')" id="nav-bgr">BG REMOVER</a>
   </div>
   <div class="nav-right">
     <div class="theme-switcher">
-      <div class="theme-dot active-dot" style="background:#00e5ff" onclick="setTheme('blue',this)" title="Blue"></div>
-      <div class="theme-dot" style="background:#ff3b3b" onclick="setTheme('red',this)" title="Red"></div>
-      <div class="theme-dot" style="background:#ffe600" onclick="setTheme('yellow',this)" title="Yellow"></div>
-      <div class="theme-dot" style="background:#c97c3a" onclick="setTheme('brown',this)" title="Brown"></div>
-      <div class="theme-dot" style="background:#888" onclick="setTheme('black',this)" title="Dark"></div>
-      <div class="theme-dot" style="background:#eee;border:1px solid #bbb" onclick="setTheme('white',this)" title="Light"></div>
+      <div class="tdot on" style="background:#00e5ff" onclick="setTheme('theme-blue',this)"></div>
+      <div class="tdot" style="background:#ff3b3b" onclick="setTheme('theme-red',this)"></div>
+      <div class="tdot" style="background:#ffe600" onclick="setTheme('theme-yellow',this)"></div>
+      <div class="tdot" style="background:#c97c3a" onclick="setTheme('theme-brown',this)"></div>
+      <div class="tdot" style="background:#888" onclick="setTheme('theme-black',this)"></div>
+      <div class="tdot" style="background:#eee;border:1px solid #bbb" onclick="setTheme('theme-white',this)"></div>
     </div>
-    <button class="btn-login" id="btn-login-nav" onclick="openLogin()">LOGIN</button>
-    <button class="btn-support" id="btn-support-nav" onclick="openPricing()">⭐ SUPPORT US</button>
-    <div class="user-avatar" id="user-avatar-wrap" onclick="openPricing()">
-      <img id="user-avatar-img" src="" alt="User"/>
+    <button class="btn-nav btn-login-nav" id="btn-login-nav" onclick="openLogin()">LOGIN</button>
+    <button class="btn-nav btn-unlock-nav" id="btn-unlock-nav" onclick="openPricing()">🔓 UNLOCK</button>
+    <div class="uavatar" id="uavatar" onclick="openPricing()">
+      <img id="uimg" src="" alt=""/>
     </div>
   </div>
 </nav>
 
-<!-- ═══ HOME PAGE ═══ -->
+<!-- ═══════════════════════════════════
+     HOME PAGE — 4 Auto-Sliding Demos
+═══════════════════════════════════ -->
 <div class="page active" id="page-home">
   <div class="hero">
     <h1>Image Upscale And All</h1>
-    <p>Free AI-Powered Image & Audio Tools — No Login Required</p>
+    <p>AI-Powered Free Tools — Login Required to Use</p>
   </div>
 
-  <!-- Before/After Slider Demo -->
-  <div class="slider-demo" id="hero-slider">
-    <div class="slider-img img-blurred" id="hero-blurred"
-         style="background-image:url('https://picsum.photos/seed/portrait1/520/340')"></div>
-    <div class="slider-img img-sharp" id="hero-sharp"
-         style="background-image:url('https://picsum.photos/seed/portrait1/520/340')"></div>
-    <div class="slider-handle" id="hero-handle"></div>
-    <div class="slider-labels">
-      <span>ORIGINAL</span>
-      <span>✨ ENHANCED</span>
-    </div>
-  </div>
+  <div class="home-demos">
 
-  <!-- Feature Cards -->
-  <div class="features">
-    <div class="feat-card" onclick="showPage('bgremover')">
-      <div class="feat-icon">✂️</div>
-      <h3>Image Background Remover</h3>
-      <p>AI removes background from any photo instantly. Change bg color too.</p>
+    <!-- 1. ENHANCER DEMO -->
+    <div class="demo-block" onclick="goTool('enh')">
+      <div class="demo-label-top">✨ IMAGE ENHANCER</div>
+      <div class="auto-slider" id="demo-enh">
+        <div class="asl-img asl-before" style="background-image:url('https://picsum.photos/seed/enh1/600/340')"></div>
+        <div class="asl-img asl-after"  style="background-image:url('https://picsum.photos/seed/enh1/600/340');filter:contrast(1.6) saturate(2) brightness(1.12) drop-shadow(0 0 6px #00e5ff44)"></div>
+        <div class="asl-handle" id="handle-enh"></div>
+        <div class="asl-labels"><span>ORIGINAL</span><span>✨ ENHANCED</span></div>
+      </div>
+      <div class="demo-desc">Soft · Vivid · Sharp · HDR · ALL — HitPaw Level</div>
     </div>
-    <div class="feat-card" onclick="showPage('upscaler')">
-      <div class="feat-icon">🔬</div>
-      <h3>Image Upscaler</h3>
-      <p>Scale up to 2K, 4K, 6K, 8K or 10K crystal clear resolution.</p>
+
+    <!-- 2. UPSCALER DEMO -->
+    <div class="demo-block" onclick="goTool('ups')">
+      <div class="demo-label-top">🔬 IMAGE UPSCALER</div>
+      <div class="auto-slider" id="demo-ups">
+        <div class="asl-img asl-before" style="background-image:url('https://picsum.photos/seed/ups1/600/340');filter:blur(4px) brightness(0.7)"></div>
+        <div class="asl-img asl-after"  style="background-image:url('https://picsum.photos/seed/ups1/600/340');filter:contrast(1.2) saturate(1.3) brightness(1.05)"></div>
+        <div class="asl-handle" id="handle-ups"></div>
+        <div class="asl-labels"><span>2K BLURRY</span><span>8K CRYSTAL</span></div>
+      </div>
+      <div class="demo-desc">2K · 4K · 6K · 8K · 10K crystal clear quality</div>
     </div>
-    <div class="feat-card" onclick="showPage('stem')">
-      <div class="feat-icon">🎵</div>
-      <h3>Stem Splitter</h3>
-      <p>Split vocals, drums, bass & instruments. Download each separately as ZIP.</p>
+
+    <!-- 3. STEM SPLITTER DEMO -->
+    <div class="demo-block" onclick="goTool('stem')">
+      <div class="demo-label-top">🎵 STEM SPLITTER</div>
+      <div class="stem-demo-wrap" id="demo-stem">
+        <!-- Left: Upload state -->
+        <div class="stem-upload-side" id="stem-demo-left">
+          <div class="stem-upload-icon">🎵</div>
+          <div class="stem-upload-text">Upload Song / Video</div>
+          <div class="stem-upload-hint">MP3 · MP4 · WAV</div>
+        </div>
+        <!-- Right: Result state (shown by slider) -->
+        <div class="stem-result-side" id="stem-demo-right">
+          <div class="stem-mini-grid">
+            <div class="stem-mini-card"><span>🎤</span><b>VOCALS</b></div>
+            <div class="stem-mini-card"><span>🥁</span><b>DRUMS</b></div>
+            <div class="stem-mini-card"><span>🎸</span><b>BASS</b></div>
+            <div class="stem-mini-card"><span>🎹</span><b>INSTRUMENTS</b></div>
+          </div>
+          <div class="stem-zip-btn">⬇ DOWNLOAD ZIP</div>
+        </div>
+        <!-- Slider handle -->
+        <div class="stem-handle" id="handle-stem"></div>
+      </div>
+      <div class="demo-desc">Separate vocals, drums, bass & instruments — ZIP download</div>
     </div>
-    <div class="feat-card" onclick="showPage('enhancer')">
-      <div class="feat-icon">✨</div>
-      <h3>Image Enhancer</h3>
-      <p>Boost quality, sharpness & colors with one click. Download enhanced.</p>
+
+    <!-- 4. BG REMOVER DEMO -->
+    <div class="demo-block" onclick="goTool('bgr')">
+      <div class="demo-label-top">✂️ BACKGROUND REMOVER</div>
+      <div class="auto-slider" id="demo-bgr">
+        <div class="asl-img asl-before" style="background-image:url('https://picsum.photos/seed/bgr1/600/340')"></div>
+        <div class="asl-img asl-after"  id="bgr-demo-after" style="background-image:url('https://picsum.photos/seed/bgr1/600/340')"></div>
+        <div class="asl-handle" id="handle-bgr"></div>
+        <div class="asl-labels"><span>ORIGINAL</span><span>✂️ BG REMOVED</span></div>
+      </div>
+      <div class="demo-desc">AI removes background — transparent PNG download</div>
     </div>
-  </div>
+
+  </div><!-- end home-demos -->
 </div>
 
-<!-- ═══ BG REMOVER PAGE ═══ -->
-<div class="page" id="page-bgremover">
+<!-- ═══ ENHANCER PAGE ═══ -->
+<div class="page" id="page-enh">
   <div class="tool-page">
-    <h2>✂️ Image Background Remover</h2>
-    <p class="sub">Upload any photo — AI removes background automatically. Download as PNG.</p>
-
-    <div class="upload-zone" id="bgr-zone"
-         onclick="document.getElementById('bgr-input').click()"
-         ondragover="dragOver(event,'bgr-zone')"
-         ondragleave="dragLeave('bgr-zone')"
-         ondrop="dropFile(event,'bgr-input','bgr-zone')">
-      <input type="file" id="bgr-input" accept="image/*" onchange="handleBGR(this)"/>
-      <div class="upload-icon">🖼️</div>
-      <p><strong>Upload Image</strong></p>
-      <p class="upload-hint">Click or Drag & Drop — JPG, PNG, WEBP supported</p>
-    </div>
-
-    <!-- Processing indicator -->
-    <div class="processing" id="bgr-processing">
-      <div class="proc-spinner"></div>
-      <span id="bgr-proc-text">Removing background with AI...</span>
-    </div>
-
-    <!-- Result area -->
-    <div class="preview-area" id="bgr-preview">
-      <div class="bg-slider-wrap" id="bgr-slider-wrap">
-        <div class="bg-original" id="bgr-original"></div>
-        <div class="bg-removed" id="bgr-removed"></div>
-        <div class="bg-handle" id="bgr-handle">
-          <div class="handle-circle">◀▶</div>
-        </div>
-        <div class="slider-labels">
-          <span>ORIGINAL</span>
-          <span>BG REMOVED</span>
-        </div>
+    <h2>✨ Image Enhancer</h2>
+    <p class="sub">HitPaw level — Select mode then upload</p>
+    <div class="lock-wall" id="lock-enh"><div class="licon">🔒</div><h3>LOGIN REQUIRED</h3><p>Please login to use this tool</p><button class="btn-dl" onclick="openLogin()">LOGIN NOW</button></div>
+    <div id="tool-enh" style="display:none">
+      <div class="mode-row">
+        <button class="mbtn on" onclick="selMode(this,'soft')">🌸 Soft</button>
+        <button class="mbtn" onclick="selMode(this,'vivid')">🌈 Vivid</button>
+        <button class="mbtn" onclick="selMode(this,'sharp')">🔪 Sharp</button>
+        <button class="mbtn" onclick="selMode(this,'hdr')">💡 HDR</button>
+        <button class="mbtn" onclick="selMode(this,'all')">⚡ ALL</button>
       </div>
-
-      <!-- Change background color -->
-      <div class="color-picker-row">
-        <span>Change Background:</span>
-        <div class="bg-color-btn active-bg" style="background:transparent;border:2px dashed #666" title="Transparent" onclick="setBGColor('transparent',this)">✕</div>
-        <div class="bg-color-btn" style="background:#1a1a1a" onclick="setBGColor('#1a1a1a',this)" title="Black"></div>
-        <div class="bg-color-btn" style="background:#ffffff;border:1px solid #ccc" onclick="setBGColor('#ffffff',this)" title="White"></div>
-        <div class="bg-color-btn" style="background:#ff3b3b" onclick="setBGColor('#ff3b3b',this)" title="Red"></div>
-        <div class="bg-color-btn" style="background:#00e5ff" onclick="setBGColor('#00e5ff',this)" title="Cyan"></div>
-        <div class="bg-color-btn" style="background:#ffe600" onclick="setBGColor('#ffe600',this)" title="Yellow"></div>
+      <div class="upload-zone" onclick="document.getElementById('enh-in').click()" id="enh-zone" ondragover="dragOver(event,'enh-zone')" ondragleave="dragLeave('enh-zone')" ondrop="dropFile(event,'enh-in','enh-zone')">
+        <input type="file" id="enh-in" accept="image/*" onchange="handleEnh(this)"/>
+        <div class="uicon">✨</div><p><strong>Upload Image</strong></p><p class="uhint">JPG · PNG · WEBP</p>
       </div>
-
-      <div class="status-msg success" id="bgr-status">✅ Background removed! Slide to compare.</div>
-
-      <!-- Real download button — triggers browser download manager (IDM etc.) -->
-      <a id="bgr-download-link" download="background-removed.png">
-        <button class="btn-download" id="bgr-download">⬇ DOWNLOAD PNG</button>
-      </a>
-      <p class="dl-hint">* Your browser/IDM download manager will handle the download</p>
+      <div class="proc" id="enh-proc"><div class="pspin"></div><span>Enhancing image...</span></div>
+      <div class="prev" id="enh-prev">
+        <div class="compare-wrap">
+          <div><div class="clabel">BEFORE</div><img id="enh-bef" src="" alt=""/></div>
+          <div><div class="clabel ac">AFTER ✨</div><img id="enh-aft" src="" alt=""/></div>
+        </div>
+        <div class="smsg ok" id="enh-msg">✅ Enhanced!</div>
+        <a id="enh-dl" download="enhanced.png"><button class="btn-dl">⬇ DOWNLOAD ENHANCED</button></a>
+        <p class="dl-hint">* IDM / browser download manager handle karega</p>
+      </div>
     </div>
   </div>
 </div>
 
 <!-- ═══ UPSCALER PAGE ═══ -->
-<div class="page" id="page-upscaler">
+<div class="page" id="page-ups">
   <div class="tool-page">
     <h2>🔬 Image Upscaler</h2>
-    <p class="sub">Select target resolution, upload image — download upscaled version.</p>
-
-    <div class="scale-selector">
-      <button class="scale-btn active" onclick="selectScale(this,'2K')">2K</button>
-      <button class="scale-btn" onclick="selectScale(this,'4K')">4K</button>
-      <button class="scale-btn" onclick="selectScale(this,'6K')">6K</button>
-      <button class="scale-btn" onclick="selectScale(this,'8K')">8K</button>
-      <button class="scale-btn" onclick="selectScale(this,'10K')">10K</button>
-    </div>
-
-    <div class="upload-zone" id="ups-zone"
-         onclick="document.getElementById('ups-input').click()"
-         ondragover="dragOver(event,'ups-zone')"
-         ondragleave="dragLeave('ups-zone')"
-         ondrop="dropFile(event,'ups-input','ups-zone')">
-      <input type="file" id="ups-input" accept="image/*" onchange="handleUpscale(this)"/>
-      <div class="upload-icon">🔬</div>
-      <p><strong>Upload Image</strong></p>
-      <p class="upload-hint">Choose resolution above then upload</p>
-    </div>
-
-    <div class="processing" id="ups-processing">
-      <div class="proc-spinner"></div>
-      <span id="ups-proc-text">Upscaling image...</span>
-    </div>
-
-    <div class="preview-area" id="ups-preview">
-      <div class="img-compare-wrap">
-        <div>
-          <div class="compare-label">ORIGINAL</div>
-          <img id="ups-before" src="" alt="Before"/>
-        </div>
-        <div>
-          <div class="compare-label accent">UPSCALED <span id="ups-badge-label">2K</span></div>
-          <img id="ups-after" src="" alt="After"/>
-        </div>
+    <p class="sub">Select resolution → Upload → Download</p>
+    <div class="lock-wall" id="lock-ups"><div class="licon">🔒</div><h3>LOGIN REQUIRED</h3><p>Please login to use this tool</p><button class="btn-dl" onclick="openLogin()">LOGIN NOW</button></div>
+    <div id="tool-ups" style="display:none">
+      <div class="scale-row">
+        <button class="sbtn on" onclick="selScale(this,'2K')">2K</button>
+        <button class="sbtn" onclick="selScale(this,'4K')">4K</button>
+        <button class="sbtn" onclick="selScale(this,'6K')">6K</button>
+        <button class="sbtn" onclick="selScale(this,'8K')">8K</button>
+        <button class="sbtn" onclick="selScale(this,'10K')">10K</button>
       </div>
-      <div class="status-msg success" id="ups-status">✅ Image upscaled successfully!</div>
-      <a id="ups-download-link" download="upscaled-image.png">
-        <button class="btn-download">⬇ DOWNLOAD UPSCALED IMAGE</button>
-      </a>
-      <p class="dl-hint">* Your browser/IDM download manager will handle the download</p>
+      <div class="upload-zone" onclick="document.getElementById('ups-in').click()" id="ups-zone" ondragover="dragOver(event,'ups-zone')" ondragleave="dragLeave('ups-zone')" ondrop="dropFile(event,'ups-in','ups-zone')">
+        <input type="file" id="ups-in" accept="image/*" onchange="handleUps(this)"/>
+        <div class="uicon">🔬</div><p><strong>Upload Image</strong></p><p class="uhint">Select resolution above then upload</p>
+      </div>
+      <div class="proc" id="ups-proc"><div class="pspin"></div><span id="ups-pt">Upscaling...</span></div>
+      <div class="prev" id="ups-prev">
+        <div class="compare-wrap">
+          <div><div class="clabel">ORIGINAL</div><img id="ups-bef" src="" alt=""/></div>
+          <div><div class="clabel ac">UPSCALED <span id="ups-badge">2K</span></div><img id="ups-aft" src="" alt=""/></div>
+        </div>
+        <div class="smsg ok" id="ups-msg">✅ Upscaled!</div>
+        <a id="ups-dl" download="upscaled.png"><button class="btn-dl">⬇ DOWNLOAD UPSCALED</button></a>
+        <p class="dl-hint">* IDM / browser download manager handle karega</p>
+      </div>
     </div>
   </div>
 </div>
@@ -194,221 +180,145 @@
 <div class="page" id="page-stem">
   <div class="tool-page">
     <h2>🎵 Stem Splitter</h2>
-    <p class="sub">Upload MP3, MP4 or WAV — get Vocals, Drums, Bass & Instruments separately in a ZIP file.</p>
-
-    <div class="upload-zone" id="stem-zone"
-         onclick="document.getElementById('stem-input').click()"
-         ondragover="dragOver(event,'stem-zone')"
-         ondragleave="dragLeave('stem-zone')"
-         ondrop="dropFile(event,'stem-input','stem-zone')">
-      <input type="file" id="stem-input" accept=".mp3,.mp4,.wav,audio/*,video/mp4" onchange="handleStem(this)"/>
-      <div class="upload-icon">🎵</div>
-      <p><strong>Upload Song / Video</strong></p>
-      <p class="upload-hint">Supports MP3, MP4, WAV</p>
-    </div>
-
-    <!-- 30 second timer spinner -->
-    <div class="timer-wrap" id="stem-timer">
-      <div class="big-spinner" id="stem-spinner-ring">
-        <span class="countdown-text" id="stem-countdown">30</span>
+    <p class="sub">Upload MP3 · MP4 · WAV → Get 4 stems in ZIP</p>
+    <div class="lock-wall" id="lock-stem"><div class="licon">🔒</div><h3>LOGIN REQUIRED</h3><p>Please login to use this tool</p><button class="btn-dl" onclick="openLogin()">LOGIN NOW</button></div>
+    <div id="tool-stem" style="display:none">
+      <div class="upload-zone" onclick="document.getElementById('stem-in').click()" id="stem-zone" ondragover="dragOver(event,'stem-zone')" ondragleave="dragLeave('stem-zone')" ondrop="dropFile(event,'stem-in','stem-zone')">
+        <input type="file" id="stem-in" accept=".mp3,.mp4,.wav,audio/*,video/mp4" onchange="handleStem(this)"/>
+        <div class="uicon">🎵</div><p><strong>Upload Song / Video</strong></p><p class="uhint">MP3 · MP4 · WAV</p>
       </div>
-      <div class="timer-label">SEPARATING STEMS — PLEASE WAIT</div>
-      <div class="timer-sublabel">Splitting vocals, drums, bass & instruments...</div>
-    </div>
-
-    <!-- Results after processing -->
-    <div class="preview-area" id="stem-preview">
-      <div class="stem-grid">
-        <div class="stem-card">
-          <div class="stem-icon">🎤</div>
-          <div class="stem-name">Vocals</div>
-          <div class="stem-desc">Only the singing voice — no music behind</div>
-          <audio id="stem-audio-vocals" controls></audio>
-        </div>
-        <div class="stem-card">
-          <div class="stem-icon">🥁</div>
-          <div class="stem-name">Drums</div>
-          <div class="stem-desc">Only drum beats — no bass, no vocals</div>
-          <audio id="stem-audio-drums" controls></audio>
-        </div>
-        <div class="stem-card">
-          <div class="stem-icon">🎸</div>
-          <div class="stem-name">Bass</div>
-          <div class="stem-desc">Only bass guitar/bass line — completely isolated</div>
-          <audio id="stem-audio-bass" controls></audio>
-        </div>
-        <div class="stem-card">
-          <div class="stem-icon">🎹</div>
-          <div class="stem-name">Instruments</div>
-          <div class="stem-desc">All other instruments — no vocals, no drums</div>
-          <audio id="stem-audio-other" controls></audio>
-        </div>
+      <div class="timer-wrap" id="stem-timer">
+        <div class="big-spin"><span class="cnt" id="stem-cnt">30</span></div>
+        <div class="tlabel">SEPARATING STEMS...</div>
+        <div class="tsub">Vocals · Drums · Bass · Instruments</div>
       </div>
-
-      <div class="status-msg success" id="stem-status">✅ Stems separated! Preview & download below.</div>
-
-      <!-- Downloads all as ZIP — browser/IDM handles it -->
-      <a id="stem-zip-link" download="stems.zip">
-        <button class="btn-download btn-big">⬇ DOWNLOAD ALL IN ONE ZIP</button>
-      </a>
-      <p class="dl-hint">ZIP contains: vocals.wav · drums.wav · bass.wav · instruments.wav</p>
-      <p class="dl-hint">* Your browser/IDM download manager will handle the download</p>
+      <div class="prev" id="stem-prev">
+        <div class="stem-grid">
+          <div class="stem-card"><div class="sicon">🎤</div><div class="sname">Vocals</div><div class="sdesc">Sirf awaaz</div><audio id="sa-v" controls></audio></div>
+          <div class="stem-card"><div class="sicon">🥁</div><div class="sname">Drums</div><div class="sdesc">Sirf drums</div><audio id="sa-d" controls></audio></div>
+          <div class="stem-card"><div class="sicon">🎸</div><div class="sname">Bass</div><div class="sdesc">Sirf bass</div><audio id="sa-b" controls></audio></div>
+          <div class="stem-card"><div class="sicon">🎹</div><div class="sname">Instruments</div><div class="sdesc">Baaki sab</div><audio id="sa-i" controls></audio></div>
+        </div>
+        <div class="smsg ok">✅ Stems ready! Preview then download ZIP.</div>
+        <a id="stem-dl" download="stems.zip"><button class="btn-dl btn-big">⬇ DOWNLOAD ALL IN ONE ZIP</button></a>
+        <p class="dl-hint">ZIP: vocals.wav · drums.wav · bass.wav · instruments.wav</p>
+      </div>
     </div>
   </div>
 </div>
 
-<!-- ═══ ENHANCER PAGE ═══ -->
-<div class="page" id="page-enhancer">
+<!-- ═══ BG REMOVER PAGE ═══ -->
+<div class="page" id="page-bgr">
   <div class="tool-page">
-    <h2>✨ Image Enhancer</h2>
-    <p class="sub">Choose enhancement mode, upload — download the improved version.</p>
-
-    <div class="enhance-modes">
-      <button class="mode-btn active" onclick="selectMode(this,'soft')">🌸 Soft</button>
-      <button class="mode-btn" onclick="selectMode(this,'vivid')">🌈 Vivid</button>
-      <button class="mode-btn" onclick="selectMode(this,'sharp')">🔪 Sharp</button>
-      <button class="mode-btn" onclick="selectMode(this,'hdr')">💡 HDR</button>
-      <button class="mode-btn" onclick="selectMode(this,'all')">⚡ ALL ENHANCE</button>
-    </div>
-
-    <div class="upload-zone" id="enh-zone"
-         onclick="document.getElementById('enh-input').click()"
-         ondragover="dragOver(event,'enh-zone')"
-         ondragleave="dragLeave('enh-zone')"
-         ondrop="dropFile(event,'enh-input','enh-zone')">
-      <input type="file" id="enh-input" accept="image/*" onchange="handleEnhance(this)"/>
-      <div class="upload-icon">✨</div>
-      <p><strong>Upload Image</strong></p>
-      <p class="upload-hint">Select mode above then upload</p>
-    </div>
-
-    <div class="processing" id="enh-processing">
-      <div class="proc-spinner"></div>
-      <span>Enhancing image...</span>
-    </div>
-
-    <div class="preview-area" id="enh-preview">
-      <div class="img-compare-wrap">
-        <div>
-          <div class="compare-label">BEFORE</div>
-          <img id="enh-before" src="" alt="Before"/>
-        </div>
-        <div>
-          <div class="compare-label accent">AFTER ✨</div>
-          <img id="enh-after" src="" alt="After"/>
-        </div>
+    <h2>✂️ Background Remover</h2>
+    <p class="sub">AI removes background — download transparent PNG</p>
+    <div class="lock-wall" id="lock-bgr"><div class="licon">🔒</div><h3>LOGIN REQUIRED</h3><p>Please login to use this tool</p><button class="btn-dl" onclick="openLogin()">LOGIN NOW</button></div>
+    <div id="tool-bgr" style="display:none">
+      <div class="upload-zone" onclick="document.getElementById('bgr-in').click()" id="bgr-zone" ondragover="dragOver(event,'bgr-zone')" ondragleave="dragLeave('bgr-zone')" ondrop="dropFile(event,'bgr-in','bgr-zone')">
+        <input type="file" id="bgr-in" accept="image/*" onchange="handleBGR(this)"/>
+        <div class="uicon">🖼️</div><p><strong>Upload Image</strong></p><p class="uhint">JPG · PNG · WEBP</p>
       </div>
-      <div class="status-msg success" id="enh-status">✅ Enhancement applied!</div>
-      <a id="enh-download-link" download="enhanced-image.png">
-        <button class="btn-download">⬇ DOWNLOAD ENHANCED IMAGE</button>
-      </a>
-      <p class="dl-hint">* Your browser/IDM download manager will handle the download</p>
+      <div class="proc" id="bgr-proc"><div class="pspin"></div><span>Removing background with AI...</span></div>
+      <div class="prev" id="bgr-prev">
+        <div class="bg-slider-wrap" id="bgr-wrap">
+          <div class="bg-orig" id="bgr-orig"></div>
+          <div class="bg-rem" id="bgr-rem"></div>
+          <div class="bg-hand" id="bgr-hand"></div>
+          <div class="asl-labels"><span>ORIGINAL</span><span>✂️ BG REMOVED</span></div>
+        </div>
+        <div class="color-row">
+          <span>Background:</span>
+          <div class="cbtn on" style="background:#1a1a1a" onclick="setBG('#1a1a1a',this)"></div>
+          <div class="cbtn" style="background:#fff;border:1px solid #ccc" onclick="setBG('#fff',this)"></div>
+          <div class="cbtn" style="background:#ff3b3b" onclick="setBG('#ff3b3b',this)"></div>
+          <div class="cbtn" style="background:#00e5ff" onclick="setBG('#00e5ff',this)"></div>
+          <div class="cbtn" style="background:#ffe600" onclick="setBG('#ffe600',this)"></div>
+          <div class="cbtn" style="background:#00ff88" onclick="setBG('#00ff88',this)"></div>
+        </div>
+        <div class="smsg ok">✅ Background removed! Slide to compare.</div>
+        <a id="bgr-dl" download="background-removed.png"><button class="btn-dl">⬇ DOWNLOAD PNG</button></a>
+        <p class="dl-hint">* Transparent PNG — IDM / browser download karega</p>
+      </div>
     </div>
   </div>
 </div>
 
 <!-- ═══ LOGIN MODAL ═══ -->
-<div class="modal-overlay" id="login-modal">
+<div class="overlay" id="login-modal">
   <div class="modal">
-    <button class="modal-close" onclick="closeModal('login-modal')">✕</button>
-    <h2 id="login-title">WELCOME BACK</h2>
-    <p id="login-sub">Sign in to your account</p>
-
-    <button class="btn-google" onclick="googleSignIn()">
-      <svg width="20" height="20" viewBox="0 0 24 24">
-        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-        <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-      </svg>
-      Sign in with Google
-    </button>
-
-    <div class="divider"><hr/><span>OR</span><hr/></div>
-
-    <div id="login-form">
-      <div class="form-group">
-        <label>Email</label>
-        <input type="email" id="login-email" placeholder="you@email.com"/>
-      </div>
-      <div class="form-group">
-        <label>Password</label>
-        <input type="password" id="login-pass" placeholder="••••••••"/>
-      </div>
-      <button class="btn-submit" onclick="emailSignIn()">SIGN IN</button>
+    <button class="mclose" onclick="closeModal('login-modal')">✕</button>
+    <h2 id="ltitle">WELCOME BACK</h2>
+    <p id="lsub">Sign in to use all tools</p>
+    <div id="lform">
+      <div class="fg"><label>Email</label><input type="email" id="lemail" placeholder="you@email.com"/></div>
+      <div class="fg"><label>Password</label><input type="password" id="lpass" placeholder="••••••••"/></div>
+      <div class="merr" id="lerr"></div>
+      <button class="btn-sub" onclick="doLogin()">SIGN IN</button>
     </div>
-
-    <div id="signup-form" style="display:none">
-      <div class="form-group">
-        <label>Name</label>
-        <input type="text" id="signup-name" placeholder="Your name"/>
-      </div>
-      <div class="form-group">
-        <label>Email</label>
-        <input type="email" id="signup-email" placeholder="you@email.com"/>
-      </div>
-      <div class="form-group">
-        <label>Password</label>
-        <input type="password" id="signup-pass" placeholder="Create password"/>
-      </div>
-      <button class="btn-submit" onclick="emailSignUp()">CREATE ACCOUNT</button>
+    <div id="sform" style="display:none">
+      <div class="fg"><label>Name</label><input type="text" id="sname" placeholder="Your name"/></div>
+      <div class="fg"><label>Email</label><input type="email" id="semail" placeholder="you@email.com"/></div>
+      <div class="fg"><label>Password</label><input type="password" id="spass" placeholder="Create password"/></div>
+      <div class="merr" id="serr"></div>
+      <button class="btn-sub" onclick="doSignup()">CREATE ACCOUNT</button>
     </div>
-
     <div style="margin-top:1rem;text-align:center">
-      <span id="toggle-link" class="modal-toggle" onclick="toggleSignup()">
-        Don't have an account? Sign Up
-      </span>
+      <span class="mtog" id="ltog" onclick="toggleForm()">Don't have an account? Sign Up</span>
     </div>
   </div>
 </div>
 
-<!-- ═══ PRICING/SUPPORT MODAL ═══ -->
-<div class="modal-overlay" id="pricing-modal">
+<!-- ═══ PRICING MODAL ═══ -->
+<div class="overlay" id="price-modal">
   <div class="modal modal-wide">
-    <button class="modal-close" onclick="closeModal('pricing-modal')">✕</button>
-    <div class="pricing-header">
-      <div id="pricing-avatar-wrap" class="pricing-avatar">👤</div>
-      <div>
-        <div class="pricing-username" id="pricing-name">Guest</div>
-        <div class="pricing-status">✅ All tools are FREE — Support us optionally ❤️</div>
+    <button class="mclose" onclick="closeModal('price-modal')">✕</button>
+    <h2>UNLOCK PREMIUM</h2>
+    <p>All tools unlocked — Choose your plan!</p>
+    <div class="pgrid" id="plan-grid">
+      <div class="pcard" onclick="selectPlan('weekly','$50',this)">
+        <div class="period">WEEKLY</div><div class="amt">$50</div>
+        <div class="pdesc">7 days full access</div>
+        <button class="btn-pay">SELECT</button>
+      </div>
+      <div class="pcard feat" onclick="selectPlan('monthly','$100',this)">
+        <div class="period">MONTHLY ⭐</div><div class="amt">$100</div>
+        <div class="pdesc">30 days — Most Popular</div>
+        <button class="btn-pay">SELECT</button>
+      </div>
+      <div class="pcard" onclick="selectPlan('yearly','$200',this)">
+        <div class="period">YEARLY</div><div class="amt">$200</div>
+        <div class="pdesc">Full year access</div>
+        <button class="btn-pay">SELECT</button>
+      </div>
+      <div class="pcard" onclick="selectPlan('lifetime','$500',this)">
+        <div class="period">LIFETIME 💎</div><div class="amt">$500</div>
+        <div class="pdesc">One-time forever</div>
+        <button class="btn-pay">SELECT</button>
       </div>
     </div>
-    <hr class="section-sep"/>
-    <h2>SUPPORT THE PROJECT</h2>
-    <p>All features are 100% free. If you love this tool, support keeps it running!</p>
-    <div class="pricing-grid">
-      <div class="price-card" onclick="selectPlan(this,'Weekly','$50')">
-        <div class="period">WEEKLY</div>
-        <div class="amount">$50</div>
-        <div class="desc">7 days supporter badge</div>
-        <button class="btn-unlock">SUPPORT</button>
+    <!-- PAYMENT FORM -->
+    <div class="pay-form" id="pay-form">
+      <div class="pay-title" id="pay-plan-title">COMPLETE PAYMENT</div>
+      <div class="fg"><label>Full Name</label><input type="text" id="pay-name" placeholder="Your full name"/></div>
+      <div class="fg"><label>Home Address</label><input type="text" id="pay-addr" placeholder="Street address"/></div>
+      <div class="fg-row">
+        <div class="fg"><label>City</label><input type="text" id="pay-city" placeholder="City"/></div>
+        <div class="fg"><label>Country</label><input type="text" id="pay-country" placeholder="Country"/></div>
       </div>
-      <div class="price-card featured" onclick="selectPlan(this,'Monthly','$100')">
-        <div class="period">MONTHLY ⭐</div>
-        <div class="amount">$100</div>
-        <div class="desc">30 days — Most Popular</div>
-        <button class="btn-unlock">SUPPORT</button>
+      <div class="fg"><label>Card Number</label><input type="text" id="pay-card" placeholder="1234 5678 9012 3456" maxlength="19" oninput="fmtCard(this)"/></div>
+      <div class="fg-row">
+        <div class="fg"><label>Expiry</label><input type="text" id="pay-exp" placeholder="MM/YY" maxlength="5"/></div>
+        <div class="fg"><label>CVV</label><input type="text" id="pay-cvv" placeholder="123" maxlength="3"/></div>
       </div>
-      <div class="price-card" onclick="selectPlan(this,'Yearly','$200')">
-        <div class="period">YEARLY</div>
-        <div class="amount">$200</div>
-        <div class="desc">Full year supporter</div>
-        <button class="btn-unlock">SUPPORT</button>
-      </div>
-      <div class="price-card" onclick="selectPlan(this,'Lifetime','$500')">
-        <div class="period">LIFETIME 💎</div>
-        <div class="amount">$500</div>
-        <div class="desc">One-time forever</div>
-        <button class="btn-unlock">SUPPORT</button>
-      </div>
+      <div class="fg"><label>Email</label><input type="email" id="pay-email" placeholder="Receipt email"/></div>
+      <div class="merr" id="pay-err"></div>
+      <button class="btn-sub" onclick="doPayment()">💳 COMPLETE PAYMENT</button>
+      <div style="margin-top:.8rem;color:var(--muted);font-size:.8rem;text-align:center">🔒 Secure payment — Your data is protected</div>
     </div>
-    <div class="unlock-success" id="unlock-success">❤️ Thank you for your support!</div>
   </div>
 </div>
 
-<!-- TOAST NOTIFICATION -->
 <div class="toast" id="toast"></div>
-
 <script src="app.js"></script>
 </body>
 </html>
