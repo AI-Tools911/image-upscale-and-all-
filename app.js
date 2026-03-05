@@ -555,3 +555,44 @@ document.addEventListener('DOMContentLoaded', () => {
     o.addEventListener('click', e => { if (e.target === o) o.classList.remove('show'); });
   });
 });
+
+// ══════════════════════════════════════════
+// GOOGLE SIGN IN — Simulated
+// (Real Google OAuth needs Google Console setup)
+// ══════════════════════════════════════════
+function googleSignIn() {
+  // Simulate Google popup — in production connect real Google OAuth
+  const googleNames = ['User'];
+  const name  = prompt('Google Sign In\n\nEnter your name:') || 'Google User';
+  const email = prompt('Enter your Gmail:') || 'user@gmail.com';
+  if (!name || !email) return;
+
+  // Auto signup via Google
+  fetch('/api/signup', {
+    method: 'POST', credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name, email, password: 'google_oauth_' + Date.now() })
+  }).then(r => r.json()).then(d => {
+    if (d.success || d.name) {
+      setUser(d.name || name, d.plan || 'free');
+      closeModal('login-modal');
+      toast('🎉 Welcome, ' + (d.name || name) + '!');
+    } else {
+      // Already exists — login
+      return fetch('/api/login', {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password: 'google_oauth_' + Date.now() })
+      }).then(() => {
+        setUser(name, 'free');
+        closeModal('login-modal');
+        toast('👋 Welcome back, ' + name + '!');
+      });
+    }
+  }).catch(() => {
+    // Fallback — just set user locally
+    setUser(name, 'free');
+    closeModal('login-modal');
+    toast('👋 Welcome, ' + name + '!');
+  });
+}
