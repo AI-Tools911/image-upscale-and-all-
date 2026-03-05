@@ -128,7 +128,16 @@ def enhance_image():
     img = Image.open(request.files['image']).convert('RGB')
     arr = np.array(img).astype(np.float32)
 
-    if mode == 'soft':
+    if mode == 'softv2':
+        # Soft V2 — deeper skin enhancement
+        arr = np.clip(np.power(arr/255.0, 0.88)*255.0, 0, 255)
+        img = Image.fromarray(arr.astype(np.uint8))
+        img = ImageEnhance.Color(img).enhance(1.35)
+        img = ImageEnhance.Contrast(img).enhance(1.2)
+        img = ImageEnhance.Sharpness(img).enhance(2.5)
+        img = img.filter(ImageFilter.SMOOTH)
+        img = ImageEnhance.Brightness(img).enhance(1.05)
+    elif mode == 'soft':
         arr = np.clip(np.power(arr/255.0, 0.9)*255.0, 0, 255)
         img = Image.fromarray(arr.astype(np.uint8))
         img = ImageEnhance.Color(img).enhance(1.25)
