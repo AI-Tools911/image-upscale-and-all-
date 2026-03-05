@@ -596,3 +596,151 @@ function googleSignIn() {
     toast('👋 Welcome, ' + name + '!');
   });
 }
+
+// ══════════════════════════════════════════
+// WAVEFORM PLAYER
+// ══════════════════════════════════════════
+const wfAudios = ['sa-v','sa-d','sa-b','sa-i'];
+const wfCanvas = ['cv-v','cv-d','cv-b','cv-i'];
+const wfColors = ['#00ff88','#a855f7','#00e5ff','#f59e0b'];
+let wfPlaying = false;
+
+function setVol(id, val) {
+  const a = document.getElementById(id);
+  if(a) a.volume = parseFloat(val);
+}
+
+function togglePlay() {
+  wfPlaying = !wfPlaying;
+  const btn = document.getElementById('wf-playbtn');
+  wfAudios.forEach(id => {
+    const a = document.getElementById(id);
+    if(!a || !a.src) return;
+    wfPlaying ? a.play() : a.pause();
+  });
+  if(btn) btn.textContent = wfPlaying ? '⏸' : '▶';
+  if(wfPlaying) updateWFProgress();
+}
+
+function seekBack() {
+  wfAudios.forEach(id => { const a=document.getElementById(id); if(a&&a.src) a.currentTime=Math.max(0,a.currentTime-15); });
+}
+function seekFwd() {
+  wfAudios.forEach(id => { const a=document.getElementById(id); if(a&&a.src) a.currentTime+=15; });
+}
+
+function updateWFProgress() {
+  if(!wfPlaying) return;
+  const a = document.getElementById('sa-v');
+  if(!a || !a.duration) { requestAnimationFrame(updateWFProgress); return; }
+  const pct = (a.currentTime / a.duration) * 100;
+  ['pr-v','pr-d','pr-b','pr-i'].forEach(id => {
+    const el = document.getElementById(id);
+    if(el) el.style.width = pct + '%';
+  });
+  // Update time
+  const cur = fmtTime(a.currentTime);
+  const dur = fmtTime(a.duration);
+  const te = document.getElementById('wf-time');
+  if(te) te.textContent = cur + ' / ' + dur;
+  requestAnimationFrame(updateWFProgress);
+}
+
+function fmtTime(s) {
+  if(isNaN(s)) return '00:00';
+  const m = Math.floor(s/60);
+  const sec = Math.floor(s%60);
+  return String(m).padStart(2,'0')+':'+String(sec).padStart(2,'0');
+}
+
+function drawWaveform(audioEl, canvasId, color) {
+  try {
+    const canvas = document.getElementById(canvasId);
+    if(!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const actx = new (window.AudioContext || window.webkitAudioContext)();
+    fetch(audioEl.src)
+      .then(r => r.arrayBuffer())
+      .then(buf => actx.decodeAudioData(buf))
+      .then(decoded => {
+        const data = decoded.getChannelData(0);
+        const W = canvas.width = canvas.offsetWidth;
+        const H = canvas.height = canvas.offsetHeight;
+        ctx.clearRect(0,0,W,H);
+        const step = Math.ceil(data.length / W);
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 1.5;
+        for(let i=0;i<W;i++){
+          let min=1,max=-1;
+          for(let j=0;j<step;j++){
+            const v=data[i*step+j]||0;
+            if(v<min)min=v; if(v>max)max=v;
+          }
+          ctx.beginPath();
+          ctx.moveTo(i, (1+min)*H/2);
+          ctx.lineTo(i, (1+max)*H/2);
+          ctx.stroke();
+        }
+      }).catch(()=>{});
+  } catch(e){}
+}
+
+// Override handleStem to also draw waveforms
+const _origHandleStem = handleStem;
+async function handleStem(input) {
+  wfPlaying = false;
+  const btn = document.getElementById('wf-playbtn');
+  if(btn) btn.textContent = '▶';
+  
+  if (!user) { openLogin(); return; }
+  const file = input.files[0]; if (!file) return;
+
+  document.getElementById('stem-timer').classList.add('show');
+  document.getElementById('stem-prev').classList.remove('show');
+
+  let secs = 45;
+  document.getElementById('stem-cnt').textContent = secs;
+  const iv = setInterval(() => {
+    secs--;
+    document.getElementById('stem-cnt').textContent = Math.max(secs, 0);
+    if (secs <= 0) clearInterval(iv);
+  }, 1000);
+
+  const fd = new FormData(); fd.append('audio', file);
+  try {
+    const r = await fetch('/split-stems', { method: 'POST', body: fd, credentials: 'include' });
+    if (!r.ok) throw new Error('Server error');
+    const blob = await r.blob();
+    const zipUrl = URL.createObjectURL(blob);
+
+    try {
+      const JSZip = (await import('https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js')).default;
+      const zip = await JSZip.loadAsync(blob);
+      const map = {'vocals.wav':'sa-v','drums.wav':'sa-d','bass.wav':'sa-b','instruments.wav':'sa-i'};
+      const cvmap = {'sa-v':['cv-v','#00ff88'],'sa-d':['cv-d','#a855f7'],'sa-b':['cv-b','#00e5ff'],'sa-i':['cv-i','#f59e0b']};
+      for (const [name, id] of Object.entries(map)) {
+        const f = zip.file(name);
+        if (f) {
+          const ab = await f.async('blob');
+          const src = URL.createObjectURL(new Blob([ab], { type: 'audio/wav' }));
+          const audioEl = document.getElementById(id);
+          audioEl.src = src;
+          setTimeout(() => drawWaveform(audioEl, cvmap[id][0], cvmap[id][1]), 500);
+        }
+      }
+    } catch(e) { console.log('zip err:', e); }
+
+    document.getElementById('stem-dl').href = zipUrl;
+    document.getElementById('stem-dl').download = file.name.replace(/\.[^.]+$/, '') + '-stems.zip';
+
+    clearInterval(iv);
+    document.getElementById('stem-timer').classList.remove('show');
+    document.getElementById('stem-prev').classList.add('show');
+    toast('✅ Stems ready! Press play!');
+  } catch(e) {
+    clearInterval(iv);
+    document.getElementById('stem-timer').classList.remove('show');
+    toast('❌ ' + e.message);
+  }
+  input.value = '';
+}
