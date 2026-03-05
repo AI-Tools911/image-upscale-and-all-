@@ -51,8 +51,8 @@
     <div class="demo-block" onclick="goTool('enh')">
       <div class="demo-label-top">✨ IMAGE ENHANCER</div>
       <div class="auto-slider" id="demo-enh">
-        <div class="asl-img asl-before" style="background-image:url('https://picsum.photos/seed/enh1/600/340')"></div>
-        <div class="asl-img asl-after"  style="background-image:url('https://picsum.photos/seed/enh1/600/340');filter:contrast(1.6) saturate(2) brightness(1.12) drop-shadow(0 0 6px #00e5ff44)"></div>
+        <div class="asl-img asl-before" style="background-image:url('https://i.pinimg.com/1200x/82/73/1b/82731bdfef25d5d1fd97eaa45b056948.jpg');filter:blur(2px) brightness(0.75) saturate(0.5)"></div>
+        <div class="asl-img asl-after"  style="background-image:url('https://i.pinimg.com/1200x/82/73/1b/82731bdfef25d5d1fd97eaa45b056948.jpg');filter:contrast(1.5) saturate(1.9) brightness(1.1)"></div>
         <div class="asl-handle" id="handle-enh"></div>
         <div class="asl-labels"><span>ORIGINAL</span><span>✨ ENHANCED</span></div>
       </div>
@@ -63,8 +63,8 @@
     <div class="demo-block" onclick="goTool('ups')">
       <div class="demo-label-top">🔬 IMAGE UPSCALER</div>
       <div class="auto-slider" id="demo-ups">
-        <div class="asl-img asl-before" style="background-image:url('https://picsum.photos/seed/ups1/600/340');filter:blur(4px) brightness(0.7)"></div>
-        <div class="asl-img asl-after"  style="background-image:url('https://picsum.photos/seed/ups1/600/340');filter:contrast(1.2) saturate(1.3) brightness(1.05)"></div>
+        <div class="asl-img asl-before" style="background-image:url('https://i.pinimg.com/736x/29/f7/5f/29f75f7f7d9b361dbd2f1d5247516a65.jpg');filter:blur(5px) brightness(0.65)"></div>
+        <div class="asl-img asl-after"  style="background-image:url('https://i.pinimg.com/736x/29/f7/5f/29f75f7f7d9b361dbd2f1d5247516a65.jpg');filter:contrast(1.2) saturate(1.3) brightness(1.05)"></div>
         <div class="asl-handle" id="handle-ups"></div>
         <div class="asl-labels"><span>2K BLURRY</span><span>8K CRYSTAL</span></div>
       </div>
@@ -101,8 +101,8 @@
     <div class="demo-block" onclick="goTool('bgr')">
       <div class="demo-label-top">✂️ BACKGROUND REMOVER</div>
       <div class="auto-slider" id="demo-bgr">
-        <div class="asl-img asl-before" style="background-image:url('https://picsum.photos/seed/bgr1/600/340')"></div>
-        <div class="asl-img asl-after"  id="bgr-demo-after" style="background-image:url('https://picsum.photos/seed/bgr1/600/340')"></div>
+        <div class="asl-img asl-before" style="background-image:url('https://i.pinimg.com/736x/f4/23/a1/f423a160569f182b2586ecd27ba8cce8.jpg')"></div>
+        <div class="asl-img asl-after"  id="bgr-demo-after" style="background-image:url('https://i.pinimg.com/736x/f4/23/a1/f423a160569f182b2586ecd27ba8cce8.jpg')"></div>
         <div class="asl-handle" id="handle-bgr"></div>
         <div class="asl-labels"><span>ORIGINAL</span><span>✂️ BG REMOVED</span></div>
       </div>
@@ -120,11 +120,7 @@
     <div class="lock-wall" id="lock-enh"><div class="licon">🔒</div><h3>LOGIN REQUIRED</h3><p>Please login to use this tool</p><button class="btn-dl" onclick="openLogin()">LOGIN NOW</button></div>
     <div id="tool-enh" style="display:none">
       <div class="mode-row">
-        <button class="mbtn on" onclick="selMode(this,'soft')">🌸 Soft</button>
-        <button class="mbtn" onclick="selMode(this,'vivid')">🌈 Vivid</button>
-        <button class="mbtn" onclick="selMode(this,'sharp')">🔪 Sharp</button>
-        <button class="mbtn" onclick="selMode(this,'hdr')">💡 HDR</button>
-        <button class="mbtn" onclick="selMode(this,'all')">⚡ ALL</button>
+        <button class="mbtn on" onclick="selMode(this,'deblur')">🔍 REMOVE BLUR</button>
       </div>
       <div class="upload-zone" onclick="document.getElementById('enh-in').click()" id="enh-zone" ondragover="dragOver(event,'enh-zone')" ondragleave="dragLeave('enh-zone')" ondrop="dropFile(event,'enh-in','enh-zone')">
         <input type="file" id="enh-in" accept="image/*" onchange="handleEnh(this)"/>
