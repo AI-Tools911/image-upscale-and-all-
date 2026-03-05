@@ -160,7 +160,17 @@ def enhance_image():
     mode = request.form.get('mode','all')
     img  = Image.open(request.files['image']).convert('RGB')
 
-    if mode == 'soft':
+    if mode == 'deblur':
+        # Remove blur — maximum sharpening
+        img = ImageEnhance.Sharpness(img).enhance(5.0)
+        img = img.filter(ImageFilter.SHARPEN)
+        img = img.filter(ImageFilter.SHARPEN)
+        img = img.filter(ImageFilter.DETAIL)
+        img = img.filter(ImageFilter.EDGE_ENHANCE_MORE)
+        img = ImageEnhance.Contrast(img).enhance(1.3)
+        img = ImageEnhance.Color(img).enhance(1.1)
+
+    elif mode == 'soft':
         img = ImageEnhance.Brightness(img).enhance(1.08)
         img = ImageEnhance.Color(img).enhance(1.3)
         img = ImageEnhance.Contrast(img).enhance(1.05)
