@@ -1,178 +1,320 @@
-# IMAGE UPSCALE AND ALL — Railway Compatible
-import os, io, zipfile, wave, hashlib
-from flask import Flask, request, send_file, jsonify, session
-from flask_cors import CORS
-from PIL import Image, ImageEnhance, ImageFilter
-import numpy as np
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Image Upscale And All</title>
+<link rel="stylesheet" href="style.css"/>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet"/>
+</head>
+<body class="theme-blue">
 
-try:
-    from rembg import remove as rembg_remove
-    HAS_REMBG = True
-    print("✅ rembg loaded")
-except ImportError:
-    HAS_REMBG = False
+<!-- ═══ NAVBAR ═══ -->
+<nav>
+  <div class="nav-logo">⚡ Image Upscale And All</div>
+  <div class="nav-links">
+    <a onclick="showPage('home')" class="active" id="nav-home">HOME</a>
+    <a onclick="goTool('enh')" id="nav-enh">ENHANCER</a>
+    <a onclick="goTool('ups')" id="nav-ups">UPSCALER</a>
+    <a onclick="goTool('stem')" id="nav-stem">STEM SPLITTER</a>
+    <a onclick="goTool('bgr')" id="nav-bgr">BG REMOVER</a>
+  </div>
+  <div class="nav-right">
+    <div class="theme-switcher">
+      <div class="tdot on" style="background:#00e5ff" onclick="setTheme('theme-blue',this)"></div>
+      <div class="tdot" style="background:#ff3b3b" onclick="setTheme('theme-red',this)"></div>
+      <div class="tdot" style="background:#ffe600" onclick="setTheme('theme-yellow',this)"></div>
+      <div class="tdot" style="background:#c97c3a" onclick="setTheme('theme-brown',this)"></div>
+      <div class="tdot" style="background:#888" onclick="setTheme('theme-black',this)"></div>
+      <div class="tdot" style="background:#eee;border:1px solid #bbb" onclick="setTheme('theme-white',this)"></div>
+    </div>
+    <button class="btn-nav btn-login-nav" id="btn-login-nav" onclick="openLogin()">LOGIN</button>
+    <button class="btn-nav btn-unlock-nav" id="btn-unlock-nav" onclick="openPricing()">🔓 UNLOCK</button>
+    <div class="uavatar" id="uavatar" onclick="openPricing()">
+      <img id="uimg" src="" alt=""/>
+    </div>
+  </div>
+</nav>
 
-app = Flask(__name__, static_folder='.', static_url_path='')
-app.secret_key = 'iua-secret-key-2024'
-CORS(app, supports_credentials=True)
-USERS = {}
+<!-- ═══════════════════════════════════
+     HOME PAGE — 4 Auto-Sliding Demos
+═══════════════════════════════════ -->
+<div class="page active" id="page-home">
+  <div class="hero">
+    <h1>Image Upscale And All</h1>
+    <p>AI-Powered Free Tools — Login Required to Use</p>
+  </div>
 
-def hash_pass(p): return hashlib.sha256(p.encode()).hexdigest()
+  <div class="home-demos">
 
-@app.route('/')
-def index(): return app.send_static_file('index.html')
+    <!-- 1. ENHANCER DEMO -->
+    <div class="demo-block" onclick="goTool('enh')">
+      <div class="demo-label-top">✨ IMAGE ENHANCER</div>
+      <div class="auto-slider" id="demo-enh">
+        <div class="asl-img asl-before" style="background-image:url('https://i.pinimg.com/1200x/82/73/1b/82731bdfef25d5d1fd97eaa45b056948.jpg');filter:blur(2px) brightness(0.75) saturate(0.5)"></div>
+        <div class="asl-img asl-after"  style="background-image:url('https://i.pinimg.com/1200x/82/73/1b/82731bdfef25d5d1fd97eaa45b056948.jpg');filter:contrast(1.5) saturate(1.9) brightness(1.1)"></div>
+        <div class="asl-handle" id="handle-enh"></div>
+        <div class="asl-labels"><span>ORIGINAL</span><span>✨ ENHANCED</span></div>
+      </div>
+      <div class="demo-desc">Soft · Vivid · Sharp · HDR · ALL — HitPaw Level</div>
+    </div>
 
-@app.route('/api/signup', methods=['POST'])
-def signup():
-    d=request.json; email=d.get('email','').lower().strip()
-    name=d.get('name',''); pwd=d.get('password','')
-    if not email or not pwd or not name: return jsonify({'error':'Fill all fields'}),400
-    if email in USERS: return jsonify({'error':'Email already exists'}),400
-    USERS[email]={'name':name,'password':hash_pass(pwd),'plan':'free'}
-    session['user']=email
-    return jsonify({'success':True,'name':name,'plan':'free'})
+    <!-- 2. UPSCALER DEMO -->
+    <div class="demo-block" onclick="goTool('ups')">
+      <div class="demo-label-top">🔬 IMAGE UPSCALER</div>
+      <div class="auto-slider" id="demo-ups">
+        <div class="asl-img asl-before" style="background-image:url('https://i.pinimg.com/736x/29/f7/5f/29f75f7f7d9b361dbd2f1d5247516a65.jpg');filter:blur(5px) brightness(0.65)"></div>
+        <div class="asl-img asl-after"  style="background-image:url('https://i.pinimg.com/736x/29/f7/5f/29f75f7f7d9b361dbd2f1d5247516a65.jpg');filter:contrast(1.2) saturate(1.3) brightness(1.05)"></div>
+        <div class="asl-handle" id="handle-ups"></div>
+        <div class="asl-labels"><span>2K BLURRY</span><span>8K CRYSTAL</span></div>
+      </div>
+      <div class="demo-desc">2K · 4K · 6K · 8K · 10K crystal clear quality</div>
+    </div>
 
-@app.route('/api/login', methods=['POST'])
-def login():
-    d=request.json; email=d.get('email','').lower().strip(); pwd=d.get('password','')
-    user=USERS.get(email)
-    if not user or user['password']!=hash_pass(pwd): return jsonify({'error':'Wrong email or password'}),401
-    session['user']=email
-    return jsonify({'success':True,'name':user['name'],'plan':user.get('plan','free')})
+    <!-- 3. STEM SPLITTER DEMO -->
+    <div class="demo-block" onclick="goTool('stem')">
+      <div class="demo-label-top">🎵 STEM SPLITTER</div>
+      <div class="stem-demo-wrap" id="demo-stem">
+        <!-- Left: Upload state -->
+        <div class="stem-upload-side" id="stem-demo-left">
+          <div class="stem-upload-icon">🎵</div>
+          <div class="stem-upload-text">Upload Song / Video</div>
+          <div class="stem-upload-hint">MP3 · MP4 · WAV</div>
+        </div>
+        <!-- Right: Result state (shown by slider) -->
+        <div class="stem-result-side" id="stem-demo-right">
+          <div class="stem-mini-grid">
+            <div class="stem-mini-card"><span>🎤</span><b>VOCALS</b></div>
+            <div class="stem-mini-card"><span>🥁</span><b>DRUMS</b></div>
+            <div class="stem-mini-card"><span>🎸</span><b>BASS</b></div>
+            <div class="stem-mini-card"><span>🎹</span><b>INSTRUMENTS</b></div>
+          </div>
+          <div class="stem-zip-btn">⬇ DOWNLOAD ZIP</div>
+        </div>
+        <!-- Slider handle -->
+        <div class="stem-handle" id="handle-stem"></div>
+      </div>
+      <div class="demo-desc">Separate vocals, drums, bass & instruments — ZIP download</div>
+    </div>
 
-@app.route('/api/logout', methods=['POST'])
-def logout(): session.pop('user',None); return jsonify({'success':True})
+    <!-- 4. BG REMOVER DEMO -->
+    <div class="demo-block" onclick="goTool('bgr')">
+      <div class="demo-label-top">✂️ BACKGROUND REMOVER</div>
+      <div class="auto-slider" id="demo-bgr">
+        <div class="asl-img asl-before" style="background-image:url('https://i.pinimg.com/736x/f4/23/a1/f423a160569f182b2586ecd27ba8cce8.jpg')"></div>
+        <div class="asl-img asl-after"  id="bgr-demo-after" style="background-image:url('https://i.pinimg.com/736x/f4/23/a1/f423a160569f182b2586ecd27ba8cce8.jpg')"></div>
+        <div class="asl-handle" id="handle-bgr"></div>
+        <div class="asl-labels"><span>ORIGINAL</span><span>✂️ BG REMOVED</span></div>
+      </div>
+      <div class="demo-desc">AI removes background — transparent PNG download</div>
+    </div>
 
-@app.route('/api/me', methods=['GET'])
-def me():
-    email=session.get('user')
-    if not email or email not in USERS: return jsonify({'loggedIn':False})
-    u=USERS[email]; return jsonify({'loggedIn':True,'name':u['name'],'plan':u.get('plan','free')})
+  </div><!-- end home-demos -->
+</div>
 
-@app.route('/api/unlock', methods=['POST'])
-def unlock():
-    email=session.get('user')
-    if not email: return jsonify({'error':'Not logged in'}),401
-    USERS[email]['plan']=request.json.get('plan','weekly')
-    return jsonify({'success':True})
+<!-- ═══ ENHANCER PAGE ═══ -->
+<div class="page" id="page-enh">
+  <div class="tool-page">
+    <h2>✨ Image Enhancer</h2>
+    <p class="sub">HitPaw level — Select mode then upload</p>
+    <div class="lock-wall" id="lock-enh"><div class="licon">🔒</div><h3>LOGIN REQUIRED</h3><p>Please login to use this tool</p><button class="btn-dl" onclick="openLogin()">LOGIN NOW</button></div>
+    <div id="tool-enh" style="display:none">
+      <div class="mode-row">
+        <button class="mbtn on" onclick="selMode(this,'deblur')">🔍 REMOVE BLUR</button>
+      </div>
+      <div class="upload-zone" onclick="document.getElementById('enh-in').click()" id="enh-zone" ondragover="dragOver(event,'enh-zone')" ondragleave="dragLeave('enh-zone')" ondrop="dropFile(event,'enh-in','enh-zone')">
+        <input type="file" id="enh-in" accept="image/*" onchange="handleEnh(this)"/>
+        <div class="uicon">✨</div><p><strong>Upload Image</strong></p><p class="uhint">JPG · PNG · WEBP</p>
+      </div>
+      <div class="proc" id="enh-proc"><div class="pspin"></div><span>Enhancing image...</span></div>
+      <div class="prev" id="enh-prev">
+        <div class="compare-wrap">
+          <div><div class="clabel">BEFORE</div><img id="enh-bef" src="" alt=""/></div>
+          <div><div class="clabel ac">AFTER ✨</div><img id="enh-aft" src="" alt=""/></div>
+        </div>
+        <div class="smsg ok" id="enh-msg">✅ Enhanced!</div>
+        <a id="enh-dl" download="enhanced.png"><button class="btn-dl">⬇ DOWNLOAD ENHANCED</button></a>
+        <p class="dl-hint">* IDM / browser download manager handle karega</p>
+      </div>
+    </div>
+  </div>
+</div>
 
-def require_login():
-    e=session.get('user'); return e if e and e in USERS else None
+<!-- ═══ UPSCALER PAGE ═══ -->
+<div class="page" id="page-ups">
+  <div class="tool-page">
+    <h2>🔬 Image Upscaler</h2>
+    <p class="sub">Select resolution → Upload → Download</p>
+    <div class="lock-wall" id="lock-ups"><div class="licon">🔒</div><h3>LOGIN REQUIRED</h3><p>Please login to use this tool</p><button class="btn-dl" onclick="openLogin()">LOGIN NOW</button></div>
+    <div id="tool-ups" style="display:none">
+      <div class="scale-row">
+        <button class="sbtn on" onclick="selScale(this,'2K')">2K</button>
+        <button class="sbtn" onclick="selScale(this,'4K')">4K</button>
+        <button class="sbtn" onclick="selScale(this,'6K')">6K</button>
+        <button class="sbtn" onclick="selScale(this,'8K')">8K</button>
+        <button class="sbtn" onclick="selScale(this,'10K')">10K</button>
+      </div>
+      <div class="upload-zone" onclick="document.getElementById('ups-in').click()" id="ups-zone" ondragover="dragOver(event,'ups-zone')" ondragleave="dragLeave('ups-zone')" ondrop="dropFile(event,'ups-in','ups-zone')">
+        <input type="file" id="ups-in" accept="image/*" onchange="handleUps(this)"/>
+        <div class="uicon">🔬</div><p><strong>Upload Image</strong></p><p class="uhint">Select resolution above then upload</p>
+      </div>
+      <div class="proc" id="ups-proc"><div class="pspin"></div><span id="ups-pt">Upscaling...</span></div>
+      <div class="prev" id="ups-prev">
+        <div class="compare-wrap">
+          <div><div class="clabel">ORIGINAL</div><img id="ups-bef" src="" alt=""/></div>
+          <div><div class="clabel ac">UPSCALED <span id="ups-badge">2K</span></div><img id="ups-aft" src="" alt=""/></div>
+        </div>
+        <div class="smsg ok" id="ups-msg">✅ Upscaled!</div>
+        <a id="ups-dl" download="upscaled.png"><button class="btn-dl">⬇ DOWNLOAD UPSCALED</button></a>
+        <p class="dl-hint">* IDM / browser download manager handle karega</p>
+      </div>
+    </div>
+  </div>
+</div>
 
-@app.route('/remove-bg', methods=['POST'])
-def remove_background():
-    if not require_login(): return jsonify({'error':'Please login first'}),401
-    if 'image' not in request.files: return jsonify({'error':'No image'}),400
-    img_bytes=request.files['image'].read()
-    result=rembg_remove(img_bytes) if HAS_REMBG else edge_bg_remove(Image.open(io.BytesIO(img_bytes)).convert('RGBA'))
-    return send_file(io.BytesIO(result),mimetype='image/png',as_attachment=True,download_name='background-removed.png')
+<!-- ═══ STEM SPLITTER PAGE ═══ -->
+<div class="page" id="page-stem">
+  <div class="tool-page">
+    <h2>🎵 Stem Splitter</h2>
+    <p class="sub">Upload MP3 · MP4 · WAV → Get 4 stems in ZIP</p>
+    <div class="lock-wall" id="lock-stem"><div class="licon">🔒</div><h3>LOGIN REQUIRED</h3><p>Please login to use this tool</p><button class="btn-dl" onclick="openLogin()">LOGIN NOW</button></div>
+    <div id="tool-stem" style="display:none">
+      <div class="upload-zone" onclick="document.getElementById('stem-in').click()" id="stem-zone" ondragover="dragOver(event,'stem-zone')" ondragleave="dragLeave('stem-zone')" ondrop="dropFile(event,'stem-in','stem-zone')">
+        <input type="file" id="stem-in" accept=".mp3,.mp4,.wav,audio/*,video/mp4" onchange="handleStem(this)"/>
+        <div class="uicon">🎵</div><p><strong>Upload Song / Video</strong></p><p class="uhint">MP3 · MP4 · WAV</p>
+      </div>
+      <div class="timer-wrap" id="stem-timer">
+        <div class="big-spin"><span class="cnt" id="stem-cnt">30</span></div>
+        <div class="tlabel">SEPARATING STEMS...</div>
+        <div class="tsub">Vocals · Drums · Bass · Instruments</div>
+      </div>
+      <div class="prev" id="stem-prev">
+        <div class="stem-grid">
+          <div class="stem-card"><div class="sicon">🎤</div><div class="sname">Vocals</div><div class="sdesc">Sirf awaaz</div><audio id="sa-v" controls></audio></div>
+          <div class="stem-card"><div class="sicon">🥁</div><div class="sname">Drums</div><div class="sdesc">Sirf drums</div><audio id="sa-d" controls></audio></div>
+          <div class="stem-card"><div class="sicon">🎸</div><div class="sname">Bass</div><div class="sdesc">Sirf bass</div><audio id="sa-b" controls></audio></div>
+          <div class="stem-card"><div class="sicon">🎹</div><div class="sname">Instruments</div><div class="sdesc">Baaki sab</div><audio id="sa-i" controls></audio></div>
+        </div>
+        <div class="smsg ok">✅ Stems ready! Preview then download ZIP.</div>
+        <a id="stem-dl" download="stems.zip"><button class="btn-dl btn-big">⬇ DOWNLOAD ALL IN ONE ZIP</button></a>
+        <p class="dl-hint">ZIP: vocals.wav · drums.wav · bass.wav · instruments.wav</p>
+      </div>
+    </div>
+  </div>
+</div>
 
-def edge_bg_remove(img):
-    data=np.array(img); edge=np.concatenate([data[0,:,:3],data[-1,:,:3],data[:,0,:3],data[:,-1,:3]])
-    bg=np.median(edge,axis=0); diff=np.sqrt(np.sum((data[:,:,:3].astype(float)-bg)**2,axis=2))
-    data[:,:,3]=np.where(diff<60,0,255).astype(np.uint8)
-    buf=io.BytesIO(); Image.fromarray(data).save(buf,'PNG'); return buf.getvalue()
+<!-- ═══ BG REMOVER PAGE ═══ -->
+<div class="page" id="page-bgr">
+  <div class="tool-page">
+    <h2>✂️ Background Remover</h2>
+    <p class="sub">AI removes background — download transparent PNG</p>
+    <div class="lock-wall" id="lock-bgr"><div class="licon">🔒</div><h3>LOGIN REQUIRED</h3><p>Please login to use this tool</p><button class="btn-dl" onclick="openLogin()">LOGIN NOW</button></div>
+    <div id="tool-bgr" style="display:none">
+      <div class="upload-zone" onclick="document.getElementById('bgr-in').click()" id="bgr-zone" ondragover="dragOver(event,'bgr-zone')" ondragleave="dragLeave('bgr-zone')" ondrop="dropFile(event,'bgr-in','bgr-zone')">
+        <input type="file" id="bgr-in" accept="image/*" onchange="handleBGR(this)"/>
+        <div class="uicon">🖼️</div><p><strong>Upload Image</strong></p><p class="uhint">JPG · PNG · WEBP</p>
+      </div>
+      <div class="proc" id="bgr-proc"><div class="pspin"></div><span>Removing background with AI...</span></div>
+      <div class="prev" id="bgr-prev">
+        <div class="bg-slider-wrap" id="bgr-wrap">
+          <div class="bg-orig" id="bgr-orig"></div>
+          <div class="bg-rem" id="bgr-rem"></div>
+          <div class="bg-hand" id="bgr-hand"></div>
+          <div class="asl-labels"><span>ORIGINAL</span><span>✂️ BG REMOVED</span></div>
+        </div>
+        <div class="color-row">
+          <span>Background:</span>
+          <div class="cbtn on" style="background:#1a1a1a" onclick="setBG('#1a1a1a',this)"></div>
+          <div class="cbtn" style="background:#fff;border:1px solid #ccc" onclick="setBG('#fff',this)"></div>
+          <div class="cbtn" style="background:#ff3b3b" onclick="setBG('#ff3b3b',this)"></div>
+          <div class="cbtn" style="background:#00e5ff" onclick="setBG('#00e5ff',this)"></div>
+          <div class="cbtn" style="background:#ffe600" onclick="setBG('#ffe600',this)"></div>
+          <div class="cbtn" style="background:#00ff88" onclick="setBG('#00ff88',this)"></div>
+        </div>
+        <div class="smsg ok">✅ Background removed! Slide to compare.</div>
+        <a id="bgr-dl" download="background-removed.png"><button class="btn-dl">⬇ DOWNLOAD PNG</button></a>
+        <p class="dl-hint">* Transparent PNG — IDM / browser download karega</p>
+      </div>
+    </div>
+  </div>
+</div>
 
-@app.route('/upscale', methods=['POST'])
-def upscale_image():
-    if not require_login(): return jsonify({'error':'Please login first'}),401
-    if 'image' not in request.files: return jsonify({'error':'No image'}),400
-    scale=request.form.get('scale','2K')
-    tw={'2K':2048,'4K':3840,'6K':5760,'8K':7680,'10K':9600}.get(scale,2048)
-    img=Image.open(request.files['image']).convert('RGB'); w,h=img.size
-    up=img.resize((tw,int(tw*h/w)),Image.LANCZOS)
-    up=up.filter(ImageFilter.SHARPEN); up=up.filter(ImageFilter.DETAIL)
-    up=ImageEnhance.Sharpness(up).enhance(1.5); up=ImageEnhance.Contrast(up).enhance(1.08)
-    buf=io.BytesIO(); up.save(buf,'PNG'); buf.seek(0)
-    return send_file(buf,mimetype='image/png',as_attachment=True,download_name=f'upscaled-{scale}.png')
+<!-- ═══ LOGIN MODAL ═══ -->
+<div class="overlay" id="login-modal">
+  <div class="modal">
+    <button class="mclose" onclick="closeModal('login-modal')">✕</button>
+    <h2 id="ltitle">WELCOME BACK</h2>
+    <p id="lsub">Sign in to use all tools</p>
+    <div id="lform">
+      <div class="fg"><label>Email</label><input type="email" id="lemail" placeholder="you@email.com"/></div>
+      <div class="fg"><label>Password</label><input type="password" id="lpass" placeholder="••••••••"/></div>
+      <div class="merr" id="lerr"></div>
+      <button class="btn-sub" onclick="doLogin()">SIGN IN</button>
+    </div>
+    <div id="sform" style="display:none">
+      <div class="fg"><label>Name</label><input type="text" id="sname" placeholder="Your name"/></div>
+      <div class="fg"><label>Email</label><input type="email" id="semail" placeholder="you@email.com"/></div>
+      <div class="fg"><label>Password</label><input type="password" id="spass" placeholder="Create password"/></div>
+      <div class="merr" id="serr"></div>
+      <button class="btn-sub" onclick="doSignup()">CREATE ACCOUNT</button>
+    </div>
+    <div style="margin-top:1rem;text-align:center">
+      <span class="mtog" id="ltog" onclick="toggleForm()">Don't have an account? Sign Up</span>
+    </div>
+  </div>
+</div>
 
-@app.route('/enhance', methods=['POST'])
-def enhance_image():
-    if not require_login(): return jsonify({'error':'Please login first'}),401
-    if 'image' not in request.files: return jsonify({'error':'No image'}),400
-    mode=request.form.get('mode','all'); img=Image.open(request.files['image']).convert('RGB')
-    if mode=='soft':
-        img=ImageEnhance.Brightness(img).enhance(1.08); img=ImageEnhance.Color(img).enhance(1.3)
-        img=ImageEnhance.Contrast(img).enhance(1.05); img=ImageEnhance.Sharpness(img).enhance(1.5)
-        img=img.filter(ImageFilter.SMOOTH_MORE)
-    elif mode=='vivid':
-        img=ImageEnhance.Color(img).enhance(2.1); img=ImageEnhance.Contrast(img).enhance(1.35)
-        img=ImageEnhance.Brightness(img).enhance(1.1); img=ImageEnhance.Sharpness(img).enhance(1.8)
-        img=img.filter(ImageFilter.DETAIL)
-    elif mode=='sharp':
-        img=ImageEnhance.Sharpness(img).enhance(4.0); img=img.filter(ImageFilter.SHARPEN)
-        img=img.filter(ImageFilter.SHARPEN); img=img.filter(ImageFilter.EDGE_ENHANCE_MORE)
-        img=ImageEnhance.Contrast(img).enhance(1.4)
-    elif mode=='hdr':
-        arr=np.array(img).astype(np.float32); arr=np.clip(np.power(arr/255.0,0.75)*255.0,0,255)
-        img=Image.fromarray(arr.astype(np.uint8)); img=ImageEnhance.Contrast(img).enhance(1.9)
-        img=ImageEnhance.Color(img).enhance(2.0); img=ImageEnhance.Sharpness(img).enhance(2.5)
-        img=img.filter(ImageFilter.SHARPEN)
-    else:
-        arr=np.array(img).astype(np.float32); arr=np.clip(np.power(arr/255.0,0.82)*255.0,0,255)
-        img=Image.fromarray(arr.astype(np.uint8)); img=ImageEnhance.Color(img).enhance(2.3)
-        img=ImageEnhance.Contrast(img).enhance(1.65); img=ImageEnhance.Brightness(img).enhance(1.1)
-        img=ImageEnhance.Sharpness(img).enhance(4.0); img=img.filter(ImageFilter.SHARPEN)
-        img=img.filter(ImageFilter.DETAIL); img=img.filter(ImageFilter.EDGE_ENHANCE)
-        img=ImageEnhance.Color(img).enhance(1.35)
-    buf=io.BytesIO(); img.save(buf,'PNG'); buf.seek(0)
-    return send_file(buf,mimetype='image/png',as_attachment=True,download_name=f'enhanced-{mode}.png')
+<!-- ═══ PRICING MODAL ═══ -->
+<div class="overlay" id="price-modal">
+  <div class="modal modal-wide">
+    <button class="mclose" onclick="closeModal('price-modal')">✕</button>
+    <h2>UNLOCK PREMIUM</h2>
+    <p>All tools unlocked — Choose your plan!</p>
+    <div class="pgrid" id="plan-grid">
+      <div class="pcard" onclick="selectPlan('weekly','$50',this)">
+        <div class="period">WEEKLY</div><div class="amt">$50</div>
+        <div class="pdesc">7 days full access</div>
+        <button class="btn-pay">SELECT</button>
+      </div>
+      <div class="pcard feat" onclick="selectPlan('monthly','$100',this)">
+        <div class="period">MONTHLY ⭐</div><div class="amt">$100</div>
+        <div class="pdesc">30 days — Most Popular</div>
+        <button class="btn-pay">SELECT</button>
+      </div>
+      <div class="pcard" onclick="selectPlan('yearly','$200',this)">
+        <div class="period">YEARLY</div><div class="amt">$200</div>
+        <div class="pdesc">Full year access</div>
+        <button class="btn-pay">SELECT</button>
+      </div>
+      <div class="pcard" onclick="selectPlan('lifetime','$500',this)">
+        <div class="period">LIFETIME 💎</div><div class="amt">$500</div>
+        <div class="pdesc">One-time forever</div>
+        <button class="btn-pay">SELECT</button>
+      </div>
+    </div>
+    <!-- PAYMENT FORM -->
+    <div class="pay-form" id="pay-form">
+      <div class="pay-title" id="pay-plan-title">COMPLETE PAYMENT</div>
+      <div class="fg"><label>Full Name</label><input type="text" id="pay-name" placeholder="Your full name"/></div>
+      <div class="fg"><label>Home Address</label><input type="text" id="pay-addr" placeholder="Street address"/></div>
+      <div class="fg-row">
+        <div class="fg"><label>City</label><input type="text" id="pay-city" placeholder="City"/></div>
+        <div class="fg"><label>Country</label><input type="text" id="pay-country" placeholder="Country"/></div>
+      </div>
+      <div class="fg"><label>Card Number</label><input type="text" id="pay-card" placeholder="1234 5678 9012 3456" maxlength="19" oninput="fmtCard(this)"/></div>
+      <div class="fg-row">
+        <div class="fg"><label>Expiry</label><input type="text" id="pay-exp" placeholder="MM/YY" maxlength="5"/></div>
+        <div class="fg"><label>CVV</label><input type="text" id="pay-cvv" placeholder="123" maxlength="3"/></div>
+      </div>
+      <div class="fg"><label>Email</label><input type="email" id="pay-email" placeholder="Receipt email"/></div>
+      <div class="merr" id="pay-err"></div>
+      <button class="btn-sub" onclick="doPayment()">💳 COMPLETE PAYMENT</button>
+      <div style="margin-top:.8rem;color:var(--muted);font-size:.8rem;text-align:center">🔒 Secure payment — Your data is protected</div>
+    </div>
+  </div>
+</div>
 
-@app.route('/split-stems', methods=['POST'])
-def split_stems():
-    if not require_login(): return jsonify({'error':'Please login first'}),401
-    if 'audio' not in request.files: return jsonify({'error':'No audio'}),400
-    file=request.files['audio']; filename=file.filename; raw=file.read()
-    try:
-        samples,sr=read_wav_data(raw)
-        if samples is None: raise Exception('Upload WAV format')
-        v,d,b,ins=fft_split(samples,sr)
-        zip_buf=io.BytesIO()
-        with zipfile.ZipFile(zip_buf,'w',zipfile.ZIP_DEFLATED) as zf:
-            zf.writestr('vocals.wav',make_wav(v,sr)); zf.writestr('drums.wav',make_wav(d,sr))
-            zf.writestr('bass.wav',make_wav(b,sr)); zf.writestr('instruments.wav',make_wav(ins,sr))
-        zip_buf.seek(0)
-        return send_file(zip_buf,mimetype='application/zip',as_attachment=True,download_name=f'{os.path.splitext(filename)[0]}-stems.zip')
-    except Exception as e:
-        zip_buf=io.BytesIO()
-        with zipfile.ZipFile(zip_buf,'w') as zf:
-            zf.writestr(filename,raw); zf.writestr('README.txt',f'Error: {str(e)}\nPlease upload WAV.')
-        zip_buf.seek(0)
-        return send_file(zip_buf,mimetype='application/zip',as_attachment=True,download_name='stems.zip')
-
-def read_wav_data(wav_bytes):
-    try:
-        buf=io.BytesIO(wav_bytes)
-        with wave.open(buf,'rb') as wf:
-            sr=wf.getframerate(); sw=wf.getsampwidth(); ch=wf.getnchannels(); raw=wf.readframes(wf.getnframes())
-        s=np.frombuffer(raw,dtype=np.int16 if sw==2 else np.uint8).astype(np.float32)
-        if ch==2: s=s.reshape(-1,2).mean(axis=1)
-        mx=np.max(np.abs(s));
-        if mx>0: s=s/mx
-        return s,sr
-    except: return None,None
-
-def fft_split(samples,sr):
-    chunk=8192; n=(len(samples)//chunk)*chunk; s=samples[:n]
-    v=np.zeros(n,np.float32); d=np.zeros(n,np.float32); b=np.zeros(n,np.float32); ins=np.zeros(n,np.float32)
-    for i in range(n//chunk):
-        seg=s[i*chunk:(i+1)*chunk]; fft=np.fft.rfft(seg); freqs=np.fft.rfftfreq(chunk,1.0/sr)
-        vf=fft.copy(); vf[(freqs<300)|(freqs>3400)]=0; v[i*chunk:(i+1)*chunk]=np.fft.irfft(vf)
-        df=fft.copy(); df[~(((freqs>=50)&(freqs<=180))|(freqs>=6000))]=0; d[i*chunk:(i+1)*chunk]=np.fft.irfft(df)
-        bf=fft.copy(); bf[freqs>250]=0; b[i*chunk:(i+1)*chunk]=np.fft.irfft(bf)
-        inf=fft.copy(); inf[(freqs<250)|(freqs>6000)]=0; ins[i*chunk:(i+1)*chunk]=np.fft.irfft(inf)
-    return v,d,b,ins
-
-def make_wav(samples,sr):
-    mx=np.max(np.abs(samples))
-    if mx>0: samples=samples/mx*0.92
-    pcm=np.clip(samples*32767,-32768,32767).astype(np.int16)
-    buf=io.BytesIO()
-    with wave.open(buf,'wb') as wf:
-        wf.setnchannels(1); wf.setsampwidth(2); wf.setframerate(sr); wf.writeframes(pcm.tobytes())
-    return buf.getvalue()
-
-if __name__=='__main__':
-    port=int(os.environ.get('PORT',5000))
-    print(f"🚀 Starting on port {port}")
-    app.run(host='0.0.0.0',port=port)
+<div class="toast" id="toast"></div>
+<script src="app.js"></script>
+</body>
+</html>
