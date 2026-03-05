@@ -1,4 +1,3 @@
-# IMAGE UPSCALE AND ALL — Railway Compatible
 import os, io, zipfile, wave, hashlib
 from flask import Flask, request, send_file, jsonify, session
 from flask_cors import CORS
@@ -8,7 +7,7 @@ import numpy as np
 try:
     from rembg import remove as rembg_remove
     HAS_REMBG = True
-    print("✅ rembg loaded")
+    print("rembg loaded")
 except ImportError:
     HAS_REMBG = False
 
@@ -147,7 +146,7 @@ def read_wav_data(wav_bytes):
             sr=wf.getframerate(); sw=wf.getsampwidth(); ch=wf.getnchannels(); raw=wf.readframes(wf.getnframes())
         s=np.frombuffer(raw,dtype=np.int16 if sw==2 else np.uint8).astype(np.float32)
         if ch==2: s=s.reshape(-1,2).mean(axis=1)
-        mx=np.max(np.abs(s));
+        mx=np.max(np.abs(s))
         if mx>0: s=s/mx
         return s,sr
     except: return None,None
@@ -173,6 +172,6 @@ def make_wav(samples,sr):
     return buf.getvalue()
 
 if __name__=='__main__':
-    port=int(os.environ.get('PORT',5000))
-    print(f"🚀 Starting on port {port}")
+    port=int(os.environ.get('PORT',8080))
+    print(f"Starting on port {port}")
     app.run(host='0.0.0.0',port=port)
