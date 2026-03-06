@@ -10,7 +10,8 @@ try:
 except ImportError:
     HAS_REMBG = False
 
-REPLICATE_TOKEN = os.environ.get('REPLICATE_API_TOKEN', '') or 'r8_Pcry5v8u9NhfK2V996ak436zCYqyMMx3LUpDN'
+REPLICATE_TOKEN = ''
+PICWISH_KEY = 'wxkmi7q6hdt31r4k1'
 
 app = Flask(__name__, static_folder='.', static_url_path='')
 app.secret_key = 'iua-secret-key-2024'
@@ -90,11 +91,11 @@ def unlock():
 # ── TEST REPLICATE ──
 @app.route("/api/test-replicate")
 def test_replicate():
-    if not REPLICATE_TOKEN:
-        return jsonify({"error": "No token set"})
-    headers = {"Authorization": f"Token {REPLICATE_TOKEN}"}
-    r = requests.get("https://api.replicate.com/v1/account", headers=headers, timeout=10)
-    return jsonify({"status": r.status_code, "token_works": r.status_code == 200})
+    if not PICWISH_KEY:
+        return jsonify({"error": "No key set"})
+    headers = {"X-API-KEY": PICWISH_KEY}
+    r = requests.get("https://techhk.aoscdn.com/api/tasks/photo/enhance", headers=headers, timeout=10)
+    return jsonify({"status": r.status_code, "key_works": r.status_code != 401})
 
 # ── BG REMOVER ──
 @app.route('/remove-bg', methods=['POST'])
@@ -134,8 +135,8 @@ def enhance_image():
     mode = request.form.get('mode','soft')
     img_bytes = request.files['image'].read()
 
-    # Try Replicate Real-ESRGAN first
-    if REPLICATE_TOKEN:
+    # Try Picwish API first
+    if PICWISH_KEY:
         try:
             result = enhance_replicate(img_bytes, mode)
             if result:
@@ -212,7 +213,7 @@ def enhance_pil(img_bytes, mode):
         img = ImageEnhance.Contrast(img).enhance(1.2)
         img = ImageEnhance.Sharpness(img).enhance(2.5)
         img = img.filter(ImageFilter.SMOOTH)
-        img = ImageEnhance.Brightness(img).enhance(1.05)
+        img = ImageEnhance.Brightness(img).enhance(1.00)
     elif mode == 'sharp':
         img = ImageEnhance.Sharpness(img).enhance(5.0)
         img = img.filter(ImageFilter.SHARPEN)
