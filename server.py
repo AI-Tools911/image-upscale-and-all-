@@ -1,4 +1,4 @@
-import os, io, zipfile, wave, hashlib, time
+import os, io, zipfile, wave, hashlib, time, requests, base64
 from flask import Flask, request, send_file, jsonify, session
 from flask_cors import CORS
 from PIL import Image, ImageEnhance, ImageFilter
@@ -9,6 +9,8 @@ try:
     HAS_REMBG = True
 except ImportError:
     HAS_REMBG = False
+
+REPLICATE_TOKEN = os.environ.get('REPLICATE_API_TOKEN', '')
 
 app = Flask(__name__, static_folder='.', static_url_path='')
 app.secret_key = 'iua-secret-key-2024'
@@ -85,10 +87,6 @@ def unlock():
     USERS[email]['plan'] = request.json.get('plan','weekly')
     return jsonify({'success':True})
 
-def require_login():
-    e = session.get('user')
-    return e if e and e in USERS else None
-
 # ── BG REMOVER ──
 @app.route('/remove-bg', methods=['POST'])
 def remove_background():
@@ -120,16 +118,85 @@ def upscale_image():
     buf = io.BytesIO(); up.save(buf,'PNG'); buf.seek(0)
     return send_file(buf, mimetype='image/png', as_attachment=True, download_name=f'upscaled-{scale}.png')
 
-# ── ENHANCER ──
+# ── ENHANCER — Real-ESRGAN via Replicate ──
 @app.route('/enhance', methods=['POST'])
 def enhance_image():
     if 'image' not in request.files: return jsonify({'error':'No image'}), 400
-    mode = request.form.get('mode','all')
-    img = Image.open(request.files['image']).convert('RGB')
+    mode = request.form.get('mode','soft')
+    img_bytes = request.files['image'].read()
+
+    # Try Replicate Real-ESRGAN first
+    if REPLICATE_TOKEN:
+        try:
+            result = enhance_replicate(img_bytes, mode)
+            if result:
+                return send_file(io.BytesIO(result), mimetype='image/png',
+                                as_attachment=True, download_name=f'enhanced-{mode}.png')
+        except Exception as e:
+            print(f"Replicate error: {e}")
+
+    # Fallback to PIL
+    result = enhance_pil(img_bytes, mode)
+    return send_file(io.BytesIO(result), mimetype='image/png',
+                    as_attachment=True, download_name=f'enhanced-{mode}.png')
+
+def enhance_replicate(img_bytes, mode):
+    # Scale based on mode
+    scale = 4  # 4x upscale like HitPaw
+    face_enhance = True  # Face enhancement on
+
+    # Convert to base64
+    b64 = base64.b64encode(img_bytes).decode()
+    img_data_uri = f"data:image/png;base64,{b64}"
+
+    headers = {
+        'Authorization': f'Token {REPLICATE_TOKEN}',
+        'Content-Type': 'application/json'
+    }
+
+    # Real-ESRGAN model
+    payload = {
+        "version": "f121d640bd286e1fdc67f9799164c1d5be36ff74576ee11c803ae5b665dd46aa",
+        "input": {
+            "image": img_data_uri,
+            "scale": scale,
+            "face_enhance": face_enhance
+        }
+    }
+
+    # Create prediction
+    r = requests.post('https://api.replicate.com/v1/predictions',
+                     json=payload, headers=headers, timeout=30)
+    if not r.ok:
+        raise Exception(f"Replicate API error: {r.text}")
+
+    pred = r.json()
+    pred_id = pred['id']
+
+    # Poll for result
+    for _ in range(60):
+        time.sleep(2)
+        r2 = requests.get(f'https://api.replicate.com/v1/predictions/{pred_id}',
+                         headers=headers, timeout=15)
+        data = r2.json()
+        status = data.get('status')
+
+        if status == 'succeeded':
+            output_url = data.get('output')
+            if output_url:
+                img_r = requests.get(output_url, timeout=30)
+                return img_r.content
+            break
+        elif status == 'failed':
+            raise Exception("Replicate prediction failed")
+
+    return None
+
+def enhance_pil(img_bytes, mode):
+    img = Image.open(io.BytesIO(img_bytes)).convert('RGB')
     arr = np.array(img).astype(np.float32)
 
     if mode == 'softv2':
-        # Soft V2 — deeper skin enhancement
         arr = np.clip(np.power(arr/255.0, 0.88)*255.0, 0, 255)
         img = Image.fromarray(arr.astype(np.uint8))
         img = ImageEnhance.Color(img).enhance(1.35)
@@ -137,51 +204,22 @@ def enhance_image():
         img = ImageEnhance.Sharpness(img).enhance(2.5)
         img = img.filter(ImageFilter.SMOOTH)
         img = ImageEnhance.Brightness(img).enhance(1.05)
-    elif mode == 'soft':
-        arr = np.clip(np.power(arr/255.0, 0.9)*255.0, 0, 255)
-        img = Image.fromarray(arr.astype(np.uint8))
-        img = ImageEnhance.Color(img).enhance(1.25)
-        img = ImageEnhance.Contrast(img).enhance(1.15)
-        img = ImageEnhance.Sharpness(img).enhance(2.0)
-        img = img.filter(ImageFilter.SMOOTH)
-    elif mode == 'vivid':
-        arr = np.clip(np.power(arr/255.0, 0.85)*255.0, 0, 255)
-        img = Image.fromarray(arr.astype(np.uint8))
-        img = ImageEnhance.Color(img).enhance(2.2)
-        img = ImageEnhance.Contrast(img).enhance(1.4)
-        img = ImageEnhance.Sharpness(img).enhance(2.5)
-        img = img.filter(ImageFilter.DETAIL)
     elif mode == 'sharp':
         img = ImageEnhance.Sharpness(img).enhance(5.0)
         img = img.filter(ImageFilter.SHARPEN)
         img = img.filter(ImageFilter.SHARPEN)
         img = img.filter(ImageFilter.EDGE_ENHANCE_MORE)
         img = ImageEnhance.Contrast(img).enhance(1.3)
-    elif mode == 'hdr':
-        arr = arr / 255.0
-        arr = np.where(arr < 0.5, arr * 1.3, 1.0 - (1.0-arr)*0.7)
-        arr = np.clip(arr*255.0, 0, 255)
+    else:  # soft
+        arr = np.clip(np.power(arr/255.0, 0.9)*255.0, 0, 255)
         img = Image.fromarray(arr.astype(np.uint8))
-        img = ImageEnhance.Contrast(img).enhance(1.6)
-        img = ImageEnhance.Color(img).enhance(1.8)
+        img = ImageEnhance.Color(img).enhance(1.25)
+        img = ImageEnhance.Contrast(img).enhance(1.15)
         img = ImageEnhance.Sharpness(img).enhance(2.0)
-    else:
         img = img.filter(ImageFilter.SMOOTH)
-        arr = np.array(img).astype(np.float32) / 255.0
-        arr = np.where(arr < 0.5, arr * 1.25, 1.0 - (1.0-arr)*0.85)
-        arr = np.clip(arr*255.0, 0, 255)
-        img = Image.fromarray(arr.astype(np.uint8))
-        img = ImageEnhance.Color(img).enhance(1.8)
-        img = ImageEnhance.Contrast(img).enhance(1.4)
-        img = ImageEnhance.Sharpness(img).enhance(4.5)
-        img = img.filter(ImageFilter.DETAIL)
-        img = img.filter(ImageFilter.SHARPEN)
-        img = img.filter(ImageFilter.EDGE_ENHANCE)
-        img = ImageEnhance.Color(img).enhance(1.2)
-        img = ImageEnhance.Brightness(img).enhance(1.05)
 
     buf = io.BytesIO(); img.save(buf,'PNG'); buf.seek(0)
-    return send_file(buf, mimetype='image/png', as_attachment=True, download_name=f'enhanced-{mode}.png')
+    return buf.getvalue()
 
 # ── STEM SPLITTER ──
 @app.route('/split-stems', methods=['POST'])
@@ -200,7 +238,7 @@ def split_stems():
             zf.writestr('instruments.wav', make_wav(ins, sr))
         zip_buf.seek(0)
         return send_file(zip_buf, mimetype='application/zip', as_attachment=True,
-                         download_name=f'{os.path.splitext(filename)[0]}-stems.zip')
+                        download_name=f'{os.path.splitext(filename)[0]}-stems.zip')
     except Exception as e:
         zip_buf = io.BytesIO()
         with zipfile.ZipFile(zip_buf,'w') as zf:
