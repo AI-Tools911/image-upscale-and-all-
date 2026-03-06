@@ -87,6 +87,15 @@ def unlock():
     USERS[email]['plan'] = request.json.get('plan','weekly')
     return jsonify({'success':True})
 
+# ── TEST REPLICATE ──
+@app.route("/api/test-replicate")
+def test_replicate():
+    if not REPLICATE_TOKEN:
+        return jsonify({"error": "No token set"})
+    headers = {"Authorization": f"Token {REPLICATE_TOKEN}"}
+    r = requests.get("https://api.replicate.com/v1/models/nightmareai/real-esrgan", headers=headers, timeout=10)
+    return jsonify({"status": r.status_code, "token_works": r.status_code == 200})
+
 # ── BG REMOVER ──
 @app.route('/remove-bg', methods=['POST'])
 def remove_background():
