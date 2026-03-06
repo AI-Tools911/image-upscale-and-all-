@@ -10,7 +10,7 @@ try:
 except ImportError:
     HAS_REMBG = False
 
-REPLICATE_TOKEN = os.environ.get('REPLICATE_API_TOKEN', '') or 'r8_MYusUJBnsjL70MWeJTgp7TNvFbOy1An19kMwS'
+REPLICATE_TOKEN = os.environ.get('REPLICATE_API_TOKEN', '') or 'r8_Pcry5v8u9NhfK2V996ak436zCYqyMMx3LUpDN'
 
 app = Flask(__name__, static_folder='.', static_url_path='')
 app.secret_key = 'iua-secret-key-2024'
