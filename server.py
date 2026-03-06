@@ -213,7 +213,7 @@ def enhance_pil(img_bytes, mode):
         img = ImageEnhance.Contrast(img).enhance(1.2)
         img = ImageEnhance.Sharpness(img).enhance(2.5)
         img = img.filter(ImageFilter.SMOOTH)
-        img = ImageEnhance.Brightness(img).enhance(1.00)
+        img = ImageEnhance.Brightness(img).enhance(1.05)
     elif mode == 'sharp':
         img = ImageEnhance.Sharpness(img).enhance(5.0)
         img = img.filter(ImageFilter.SHARPEN)
