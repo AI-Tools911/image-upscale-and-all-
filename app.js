@@ -421,6 +421,7 @@ async function handleEnh(input) {
     document.getElementById('enh-dl').download=`enhanced-${curMode}.png`;
     document.getElementById('enh-proc').classList.remove('show');
     document.getElementById('enh-prev').classList.add('show');
+    setTimeout(initEnhSlider, 150);
     toast(`✅ Enhanced (${curMode})!`);
   } catch(e){document.getElementById('enh-proc').classList.remove('show');toast('❌ '+e.message);}
   input.value='';
@@ -529,6 +530,32 @@ function updateProgress(){
 }
 
 function fmtTime(s){if(isNaN(s))return'00:00';const m=Math.floor(s/60);const sec=Math.floor(s%60);return String(m).padStart(2,'0')+':'+String(sec).padStart(2,'0');}
+
+// ── HITPAW ENHANCER SLIDER ──
+function initEnhSlider() {
+  const wrap = document.getElementById('enh-slider-wrap');
+  const before = document.getElementById('enh-bef');
+  const handle = document.getElementById('enh-handle');
+  if (!wrap || !before || !handle) return;
+
+  let drag = false;
+
+  function setPos(x) {
+    const r = wrap.getBoundingClientRect();
+    let p = Math.min(Math.max(((x - r.left) / r.width) * 100, 0), 100);
+    before.style.clipPath = `inset(0 ${100 - p}% 0 0)`;
+    handle.style.left = p + "%";
+  }
+
+  wrap.addEventListener("mousedown", e => { drag = true; setPos(e.clientX); });
+  window.addEventListener("mousemove", e => { if (drag) setPos(e.clientX); });
+  window.addEventListener("mouseup", () => drag = false);
+  wrap.addEventListener("touchstart", e => { drag = true; setPos(e.touches[0].clientX); }, { passive: true });
+  window.addEventListener("touchmove", e => { if (drag) setPos(e.touches[0].clientX); }, { passive: true });
+  window.addEventListener("touchend", () => drag = false);
+
+  setPos(wrap.getBoundingClientRect().width / 2);
+}
 
 // ── TOAST ──
 function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3500);}
