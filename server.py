@@ -10,8 +10,6 @@ try:
 except ImportError:
     HAS_REMBG = False
 
-HF_TOKEN = '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'
-
 app = Flask(__name__, static_folder='.', static_url_path='')
 app.secret_key = 'iua-secret-key-2024'
 app.config['SESSION_COOKIE_SAMESITE'] = 'None'
@@ -116,29 +114,28 @@ def upscale_image():
     buf = io.BytesIO(); up.save(buf,'PNG'); buf.seek(0)
     return send_file(buf, mimetype='image/png', as_attachment=True, download_name=f'upscaled-{scale}.png')
 
-# ── ENHANCER — HuggingFace Real-ESRGAN ──
+# ── ENHANCER — Waifu2x + PIL ──
 @app.route('/enhance', methods=['POST'])
 def enhance_image():
     if 'image' not in request.files: return jsonify({'error':'No image'}), 400
     mode = request.form.get('mode', 'soft')
     img_bytes = request.files['image'].read()
 
-    # Try HuggingFace Real-ESRGAN
+    # Try waifu2x
     try:
-        result = enhance_hf(img_bytes)
+        result = enhance_waifu2x(img_bytes)
         if result:
             return send_file(io.BytesIO(result), mimetype='image/png',
                            as_attachment=True, download_name=f'enhanced-{mode}.png')
     except Exception as e:
-        print(f"HF error: {e}")
+        print(f"Waifu2x error: {e}")
 
     # PIL fallback
-    result = enhance_pil(img_bytes, mode)
+    result = enhance_pil(img_bytes)
     return send_file(io.BytesIO(result), mimetype='image/png',
                    as_attachment=True, download_name=f'enhanced-{mode}.png')
 
-def enhance_hf(img_bytes):
-    # Resize if too large — HF has limits
+def enhance_waifu2x(img_bytes):
     img = Image.open(io.BytesIO(img_bytes)).convert('RGB')
     w, h = img.size
     if w > 1024 or h > 1024:
@@ -146,35 +143,44 @@ def enhance_hf(img_bytes):
         img = img.resize((int(w*ratio), int(h*ratio)), Image.LANCZOS)
     buf = io.BytesIO()
     img.save(buf, 'PNG')
-    img_bytes = buf.getvalue()
 
-    headers = {'Authorization': f'Bearer {HF_TOKEN}'}
-
-    # Real-ESRGAN x4plus model
+    # HuggingFace Space — Real-ESRGAN
     r = requests.post(
-        'https://api-inference.huggingface.co/models/ai-forever/Real-ESRGAN',
-        headers=headers,
-        data=img_bytes,
+        'https://allvocalsremover-real-esrgan-api.hf.space/run/predict',
+        json={'data': ['data:image/png;base64,' + base64.b64encode(buf.getvalue()).decode()]},
         timeout=120
     )
 
-    print(f"HF status: {r.status_code} | {r.text[:200]}")
+    print(f"HF Space: {r.status_code} | {r.text[:200]}")
 
-    if r.ok and r.headers.get('content-type','').startswith('image'):
-        return r.content
+    if r.ok:
+        resp = r.json()
+        data = resp.get('data', [])
+        if data:
+            img_b64 = data[0]
+            if img_b64.startswith('data:'):
+                img_b64 = img_b64.split(',')[1]
+            result_img = Image.open(io.BytesIO(base64.b64decode(img_b64))).convert('RGB')
+            rw, rh = result_img.size
+            tw = 3840
+            if rw < tw:
+                result_img = result_img.resize((tw, int(tw*rh/rw)), Image.LANCZOS)
+            out = io.BytesIO()
+            result_img.save(out, 'PNG')
+            out.seek(0)
+            return out.getvalue()
 
-    raise Exception(f"HF failed: {r.status_code} {r.text[:100]}")
+    raise Exception(f"HF Space failed: {r.status_code} {r.text[:100]}")
 
-def enhance_pil(img_bytes, mode):
+def enhance_pil(img_bytes):
     img = Image.open(io.BytesIO(img_bytes)).convert('RGB')
     w, h = img.size
-    # Sirf blur remove — koi color/brightness change nahi
+    # Blur removal
     img = img.filter(ImageFilter.MedianFilter(size=3))
     img = img.filter(ImageFilter.UnsharpMask(radius=2, percent=180, threshold=2))
     # 4K upscale
     tw = 3840
     img = img.resize((tw, int(tw*h/w)), Image.LANCZOS)
-    # Post sharpen only
     img = img.filter(ImageFilter.UnsharpMask(radius=1.5, percent=150, threshold=2))
     buf = io.BytesIO()
     img.save(buf, 'PNG')
