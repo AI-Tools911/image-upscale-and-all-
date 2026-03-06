@@ -163,35 +163,37 @@ def enhance_image():
 
 def enhance_deepimage(img_bytes, mode):
     # Deep-Image.ai — best blur removal
-    headers = {
-        "x-api-key": DEEP_IMAGE_KEY,
-        "Content-Type": "application/json"
-    }
+    # Convert to JPEG first
+    img = Image.open(io.BytesIO(img_bytes)).convert("RGB")
+    buf = io.BytesIO()
+    img.save(buf, "JPEG", quality=95)
+    buf.seek(0)
     
-    # Convert to base64
-    b64 = base64.b64encode(img_bytes).decode()
+    headers = {"x-api-key": DEEP_IMAGE_KEY}
     
-    payload = {
-        "url": f"data:image/jpeg;base64,{b64}",
-        "enhancements": ["upscale", "deblur", "denoise", "light"],
-        "output_format": "jpg",
-        "width": 3840
+    files = {"image": ("image.jpg", buf.getvalue(), "image/jpeg")}
+    data = {
+        "enhancements": "upscale,deblur,denoise",
+        "width": "3840"
     }
     
     r = requests.post(
         "https://deep-image.ai/rest_api/process_result",
-        json=payload,
         headers=headers,
+        files=files,
+        data=data,
         timeout=120
     )
+    
+    print(f"Deep-Image status: {r.status_code}")
+    print(f"Deep-Image response: {r.text[:300]}")
     
     if not r.ok:
         raise Exception(f"Deep-Image error: {r.status_code} {r.text}")
     
     resp = r.json()
-    print(f"Deep-Image response: {resp}")
     
-    output_url = resp.get("output_url") or resp.get("url") or resp.get("result_url")
+    output_url = resp.get("output_url") or resp.get("url") or resp.get("result_url") or resp.get("image")
     if output_url:
         img_r = requests.get(output_url, timeout=60)
         return img_r.content
