@@ -189,11 +189,12 @@ nav{position:fixed;top:0;left:0;right:0;z-index:1000;background:rgba(10,10,15,.9
       🕐 Free: <b id="timer-display">3:00:00</b>
     </div>
     <div class="theme-switcher">
-      <div class="tdot on" style="background:#00e5ff" onclick="setTheme('theme-blue',this)"></div>
+      <div class="tdot" style="background:#00e5ff" onclick="setTheme('theme-blue',this)"></div>
       <div class="tdot" style="background:#ff3b3b" onclick="setTheme('theme-red',this)"></div>
       <div class="tdot" style="background:#ffe600" onclick="setTheme('theme-yellow',this)"></div>
       <div class="tdot" style="background:#c97c3a" onclick="setTheme('theme-brown',this)"></div>
-      <div class="tdot" style="background:#888" onclick="setTheme('theme-black',this)"></div>
+      <div class="tdot" style="background:#333" onclick="setTheme('theme-black',this)"></div>
+      <div class="tdot on" style="background:#ffffff;border:2px solid #aaa" onclick="setTheme('theme-white',this)"></div>
     </div>
     <button class="btn-nav btn-login-nav" id="btn-login-nav" onclick="openLogin()">LOGIN</button>
     <button class="btn-nav btn-unlock-nav" id="btn-unlock-nav" onclick="openPricing()">🔓 UNLOCK</button>
