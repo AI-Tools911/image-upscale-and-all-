@@ -96,6 +96,17 @@ nav{position:fixed;top:0;left:0;right:0;z-index:1000;background:rgba(10,10,15,.9
 .sbtn,.mbtn{padding:8px 20px;border-radius:8px;border:1px solid var(--border);background:var(--card);color:var(--text);cursor:pointer;font-family:Rajdhani,sans-serif;font-weight:700;font-size:.95rem;transition:all .2s}
 .sbtn:hover,.sbtn.on,.mbtn:hover,.mbtn.on{background:var(--accent);color:#000;border-color:var(--accent)}
 .compare-wrap{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:1rem}
+.hitpaw-slider-wrap{position:relative;width:100%;max-width:820px;margin:0 auto;border-radius:14px;overflow:hidden;border:2px solid var(--border);background:#000;cursor:ew-resize;user-select:none}
+.hp-img{display:block;width:100%;height:auto;max-height:520px;object-fit:contain}
+.hp-before{position:absolute;top:0;left:0;width:100%;height:100%;object-fit:contain}
+.hp-after{display:block;width:100%;height:100%;object-fit:contain}
+.hp-before{clip-path:inset(0 50% 0 0)}
+.hp-handle{position:absolute;top:0;bottom:0;left:50%;transform:translateX(-50%);width:44px;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:10;pointer-events:none}
+.hp-line{position:absolute;top:0;bottom:0;left:50%;width:3px;background:var(--accent);transform:translateX(-50%);box-shadow:0 0 10px var(--accent)}
+.hp-btn{background:var(--accent);color:#000;font-weight:900;font-size:.8rem;padding:8px 6px;border-radius:50%;width:38px;height:38px;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 12px rgba(0,0,0,.4);z-index:11}
+.hp-label{position:absolute;top:12px;z-index:10;background:rgba(0,0,0,.6);color:#fff;font-size:.8rem;font-weight:700;padding:4px 12px;border-radius:20px;letter-spacing:1px}
+.hp-label-left{left:12px}
+.hp-label-right{right:12px}
 .compare-wrap img{width:100%;border-radius:10px;border:1px solid var(--border)}
 .clabel{font-size:.8rem;color:var(--muted);margin-bottom:5px;font-weight:700;letter-spacing:1px}
 .clabel.ac{color:var(--accent)}
@@ -277,11 +288,17 @@ nav{position:fixed;top:0;left:0;right:0;z-index:1000;background:rgba(10,10,15,.9
       </div>
       <div class="proc" id="enh-proc"><div class="pspin"></div><span>Enhancing...</span></div>
       <div class="prev" id="enh-prev">
-        <div class="compare-wrap">
-          <div><div class="clabel">BEFORE</div><img id="enh-bef" src="" alt=""/></div>
-          <div><div class="clabel ac">AFTER ✨</div><img id="enh-aft" src="" alt=""/></div>
+        <div class="hitpaw-slider-wrap" id="enh-slider-wrap">
+          <div class="hp-label hp-label-left">BEFORE</div>
+          <div class="hp-label hp-label-right">AFTER ✨</div>
+          <img id="enh-bef" class="hp-img hp-before" src="" alt=""/>
+          <img id="enh-aft" class="hp-img hp-after" src="" alt=""/>
+          <div class="hp-handle" id="enh-handle">
+            <div class="hp-line"></div>
+            <div class="hp-btn">◀ ▶</div>
+          </div>
         </div>
-        <a id="enh-dl" download="enhanced.png"><button class="btn-dl">⬇ DOWNLOAD</button></a>
+        <a id="enh-dl" download="enhanced.png"><button class="btn-dl" style="margin-top:1.2rem">⬇ DOWNLOAD ENHANCED</button></a>
       </div>
     </div>
   </div>
