@@ -1,7 +1,7 @@
 import os, io, zipfile, wave, hashlib, time, requests, base64
 from flask import Flask, request, send_file, jsonify, session
 from flask_cors import CORS
-from PIL import Image, ImageEnhance, ImageFilter, ImageOps
+from PIL import Image, ImageEnhance, ImageFilter
 import numpy as np
 
 try:
@@ -9,6 +9,9 @@ try:
     HAS_REMBG = True
 except ImportError:
     HAS_REMBG = False
+
+PICWISH_KEY = 'wxkmi7q6hdt31r4k1'
+DEEP_IMAGE_KEY = 'a15686f0-1970-11f1-ab4c-05baad7d604f'
 
 app = Flask(__name__, static_folder='.', static_url_path='')
 app.secret_key = 'iua-secret-key-2024'
@@ -114,42 +117,121 @@ def upscale_image():
     buf = io.BytesIO(); up.save(buf,'PNG'); buf.seek(0)
     return send_file(buf, mimetype='image/png', as_attachment=True, download_name=f'upscaled-{scale}.png')
 
-# ── ENHANCER — Real blur removal + 4K — NO WATERMARK ──
+# ── ENHANCER ──
 @app.route('/enhance', methods=['POST'])
 def enhance_image():
     if 'image' not in request.files: return jsonify({'error':'No image'}), 400
     mode = request.form.get('mode', 'soft')
     img_bytes = request.files['image'].read()
 
-    result = real_enhance(img_bytes, mode)
-    return send_file(io.BytesIO(result), mimetype='image/png',
-                    as_attachment=True, download_name=f'enhanced-{mode}.png')
+    # Try Deep-Image first
+    try:
+        result = enhance_deepimage(img_bytes)
+        if result:
+            return send_file(io.BytesIO(result), mimetype='image/png',
+                           as_attachment=True, download_name=f'enhanced-{mode}.png')
+    except Exception as e:
+        print(f"Deep-Image failed: {e}")
 
-def real_enhance(img_bytes, mode):
+    # Try Picwish second
+    try:
+        result = enhance_picwish(img_bytes)
+        if result:
+            return send_file(io.BytesIO(result), mimetype='image/png',
+                           as_attachment=True, download_name=f'enhanced-{mode}.png')
+    except Exception as e:
+        print(f"Picwish failed: {e}")
+
+    # PIL fallback
+    result = enhance_pil(img_bytes, mode)
+    return send_file(io.BytesIO(result), mimetype='image/png',
+                   as_attachment=True, download_name=f'enhanced-{mode}.png')
+
+def enhance_deepimage(img_bytes):
+    img = Image.open(io.BytesIO(img_bytes)).convert('RGB')
+    buf = io.BytesIO()
+    img.save(buf, 'JPEG', quality=95)
+    b64 = base64.b64encode(buf.getvalue()).decode()
+
+    headers = {
+        'x-api-key': DEEP_IMAGE_KEY,
+        'Content-Type': 'application/json'
+    }
+    payload = {
+        'url': f'data:image/jpeg;base64,{b64}',
+        'enhancements': ['upscale', 'deblur', 'denoise'],
+        'output_format': 'jpg',
+        'width': 3840
+    }
+
+    r = requests.post('https://deep-image.ai/rest_api/process_result',
+                     json=payload, headers=headers, timeout=120)
+
+    print(f"Deep-Image: {r.status_code} | {r.text[:300]}")
+
+    if not r.ok:
+        raise Exception(f"Deep-Image {r.status_code}: {r.text[:100]}")
+
+    resp = r.json()
+    url = (resp.get('output_url') or resp.get('url') or
+           resp.get('result_url') or resp.get('image'))
+    if url:
+        img_data = requests.get(url, timeout=60).content
+        return img_data
+
+    raise Exception(f"No URL: {resp}")
+
+def enhance_picwish(img_bytes):
+    img = Image.open(io.BytesIO(img_bytes)).convert('RGB')
+    buf = io.BytesIO()
+    img.save(buf, 'JPEG', quality=95)
+
+    headers = {'X-API-KEY': PICWISH_KEY}
+    files = {'image': ('image.jpg', buf.getvalue(), 'image/jpeg')}
+
+    r = requests.post('https://techhk.aoscdn.com/api/tasks/photo/upscale',
+                     headers=headers, files=files,
+                     data={'scale': 4, 'sync': 1}, timeout=60)
+
+    print(f"Picwish: {r.status_code} | {r.text[:300]}")
+
+    if not r.ok:
+        raise Exception(f"Picwish {r.status_code}")
+
+    resp = r.json()
+    if resp.get('status') == 200:
+        data = resp.get('data', {})
+        url = data.get('image')
+        if url:
+            return requests.get(url, timeout=30).content
+        task_id = data.get('task_id')
+        if task_id:
+            for _ in range(30):
+                time.sleep(2)
+                r2 = requests.get(
+                    f'https://techhk.aoscdn.com/api/tasks/photo/upscale/{task_id}',
+                    headers=headers, timeout=15)
+                d2 = r2.json()
+                if d2.get('status') == 200:
+                    url = d2.get('data', {}).get('image')
+                    if url:
+                        return requests.get(url, timeout=30).content
+    raise Exception(f"Picwish failed: {resp}")
+
+def enhance_pil(img_bytes, mode):
     img = Image.open(io.BytesIO(img_bytes)).convert('RGB')
     w, h = img.size
-
-    # ── STEP 1: DENOISE — remove grain/noise ──
-    arr = np.array(img).astype(np.float32)
-    # Gaussian-like denoise
-    from PIL import ImageFilter
+    # Denoise
     img = img.filter(ImageFilter.MedianFilter(size=3))
-
-    # ── STEP 2: UNSHARP MASK — real blur removal ──
+    # Unsharp mask — real blur removal
     img = img.filter(ImageFilter.UnsharpMask(radius=2, percent=180, threshold=2))
-    img = img.filter(ImageFilter.UnsharpMask(radius=1, percent=120, threshold=1))
-
-    # ── STEP 3: 4K UPSCALE ──
+    # 4K upscale
     tw = 3840
-    if w < tw:
-        new_h = int(tw * h / w)
-        img = img.resize((tw, new_h), Image.LANCZOS)
-    
-    # ── STEP 4: POST UPSCALE SHARPEN ──
+    img = img.resize((tw, int(tw*h/w)), Image.LANCZOS)
+    # Post sharpen
     img = img.filter(ImageFilter.UnsharpMask(radius=1.5, percent=150, threshold=2))
     img = img.filter(ImageFilter.DETAIL)
-
-    # ── STEP 5: MODE BASED COLOR ──
+    # Mode
     if mode == 'soft':
         img = ImageEnhance.Color(img).enhance(1.2)
         img = ImageEnhance.Contrast(img).enhance(1.1)
@@ -157,14 +239,13 @@ def real_enhance(img_bytes, mode):
     elif mode == 'softv2':
         img = ImageEnhance.Color(img).enhance(1.35)
         img = ImageEnhance.Contrast(img).enhance(1.25)
-        img = ImageEnhance.Brightness(img).enhance(1.06)
         img = ImageEnhance.Sharpness(img).enhance(2.0)
+        img = ImageEnhance.Brightness(img).enhance(1.06)
     elif mode == 'sharp':
         img = ImageEnhance.Sharpness(img).enhance(3.5)
         img = img.filter(ImageFilter.SHARPEN)
         img = img.filter(ImageFilter.EDGE_ENHANCE)
         img = ImageEnhance.Contrast(img).enhance(1.35)
-
     buf = io.BytesIO()
     img.save(buf, 'PNG')
     buf.seek(0)
