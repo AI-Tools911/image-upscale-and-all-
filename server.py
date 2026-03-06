@@ -10,7 +10,6 @@ try:
 except ImportError:
     HAS_REMBG = False
 
-REPLICATE_TOKEN = ''
 PICWISH_KEY = 'wxkmi7q6hdt31r4k1'
 DEEP_IMAGE_KEY = 'a15686f0-1970-11f1-ab4c-05baad7d604f'
 
@@ -89,15 +88,6 @@ def unlock():
     USERS[email]['plan'] = request.json.get('plan','weekly')
     return jsonify({'success':True})
 
-# ── TEST REPLICATE ──
-@app.route("/api/test-replicate")
-def test_replicate():
-    if not PICWISH_KEY:
-        return jsonify({"error": "No key set"})
-    headers = {"X-API-KEY": PICWISH_KEY}
-    r = requests.get("https://techhk.aoscdn.com/api/tasks/photo/enhance", headers=headers, timeout=10)
-    return jsonify({"status": r.status_code, "key_works": r.status_code != 401})
-
 # ── BG REMOVER ──
 @app.route('/remove-bg', methods=['POST'])
 def remove_background():
@@ -122,162 +112,116 @@ def upscale_image():
     tw = {'2K':2048,'4K':3840,'6K':5760,'8K':7680,'10K':9600}.get(scale,2048)
     img = Image.open(request.files['image']).convert('RGB'); w,h = img.size
     up = img.resize((tw, int(tw*h/w)), Image.LANCZOS)
-    up = up.filter(ImageFilter.SHARPEN)
-    up = up.filter(ImageFilter.DETAIL)
-    up = ImageEnhance.Sharpness(up).enhance(1.8)
+    up = ImageEnhance.Sharpness(up).enhance(2.0)
     up = ImageEnhance.Contrast(up).enhance(1.1)
     buf = io.BytesIO(); up.save(buf,'PNG'); buf.seek(0)
     return send_file(buf, mimetype='image/png', as_attachment=True, download_name=f'upscaled-{scale}.png')
 
-# ── ENHANCER — Real-ESRGAN via Replicate ──
+# ── ENHANCER — AI Blur Removal + 4K ──
 @app.route('/enhance', methods=['POST'])
 def enhance_image():
     if 'image' not in request.files: return jsonify({'error':'No image'}), 400
     mode = request.form.get('mode','soft')
     img_bytes = request.files['image'].read()
 
-    # Try Deep-Image first — best blur removal
-    if DEEP_IMAGE_KEY:
-        try:
-            result = enhance_deepimage(img_bytes, mode)
-            if result:
-                return send_file(io.BytesIO(result), mimetype='image/png',
-                                as_attachment=True, download_name=f'enhanced-{mode}.png')
-        except Exception as e:
-            print(f"Deep-Image error: {e}")
+    # Try Deep-Image first
+    try:
+        result = enhance_deepimage(img_bytes)
+        if result:
+            return send_file(io.BytesIO(result), mimetype='image/png',
+                           as_attachment=True, download_name=f'enhanced-{mode}.png')
+    except Exception as e:
+        print(f"Deep-Image error: {e}")
 
     # Try Picwish second
-    if PICWISH_KEY:
-        try:
-            result = enhance_replicate(img_bytes, mode)
-            if result:
-                return send_file(io.BytesIO(result), mimetype='image/png',
-                                as_attachment=True, download_name=f'enhanced-{mode}.png')
-        except Exception as e:
-            print(f"Picwish error: {e}")
+    try:
+        result = enhance_picwish(img_bytes)
+        if result:
+            return send_file(io.BytesIO(result), mimetype='image/png',
+                           as_attachment=True, download_name=f'enhanced-{mode}.png')
+    except Exception as e:
+        print(f"Picwish error: {e}")
 
-    # Fallback to PIL
+    # PIL fallback — 4K + sharpen
     result = enhance_pil(img_bytes, mode)
     return send_file(io.BytesIO(result), mimetype='image/png',
-                    as_attachment=True, download_name=f'enhanced-{mode}.png')
+                   as_attachment=True, download_name=f'enhanced-{mode}.png')
 
-def enhance_deepimage(img_bytes, mode):
-    # Deep-Image.ai — best blur removal
-    # Convert to JPEG first
-    img = Image.open(io.BytesIO(img_bytes)).convert("RGB")
+def enhance_deepimage(img_bytes):
+    img = Image.open(io.BytesIO(img_bytes)).convert('RGB')
     buf = io.BytesIO()
-    img.save(buf, "JPEG", quality=95)
-    buf.seek(0)
-    
-    headers = {"x-api-key": DEEP_IMAGE_KEY}
-    
-    files = {"image": ("image.jpg", buf.getvalue(), "image/jpeg")}
-    data = {
-        "enhancements": "upscale,deblur,denoise",
-        "width": "3840"
-    }
-    
-    r = requests.post(
-        "https://deep-image.ai/rest_api/process_result",
-        headers=headers,
-        files=files,
-        data=data,
-        timeout=120
-    )
-    
-    print(f"Deep-Image status: {r.status_code}")
-    print(f"Deep-Image response: {r.text[:300]}")
-    
-    if not r.ok:
-        raise Exception(f"Deep-Image error: {r.status_code} {r.text}")
-    
+    img.save(buf, 'JPEG', quality=95)
+
+    headers = {'x-api-key': DEEP_IMAGE_KEY}
+    files = {'image': ('image.jpg', buf.getvalue(), 'image/jpeg')}
+    data = {'width': '3840', 'enhancements': 'upscale,denoise,deblur'}
+
+    r = requests.post('https://deep-image.ai/rest_api/process_result',
+                     headers=headers, files=files, data=data, timeout=120)
+
+    print(f"Deep-Image: {r.status_code} {r.text[:200]}")
+    if not r.ok: raise Exception(f"Status {r.status_code}")
+
     resp = r.json()
-    
-    output_url = resp.get("output_url") or resp.get("url") or resp.get("result_url") or resp.get("image")
-    if output_url:
-        img_r = requests.get(output_url, timeout=60)
-        return img_r.content
-    
-    raise Exception(f"No output URL: {resp}")
+    url = resp.get('output_url') or resp.get('url') or resp.get('result_url') or resp.get('image')
+    if url:
+        return requests.get(url, timeout=60).content
+    raise Exception(f"No URL in response: {resp}")
 
-def enhance_replicate(img_bytes, mode):
-    # Scale based on mode
-    scale = 4  # 4x upscale like HitPaw
-    face_enhance = True  # Face enhancement on
+def enhance_picwish(img_bytes):
+    img = Image.open(io.BytesIO(img_bytes)).convert('RGB')
+    buf = io.BytesIO()
+    img.save(buf, 'JPEG', quality=95)
 
-    # Convert to base64
-    b64 = base64.b64encode(img_bytes).decode()
-    img_data_uri = f"data:image/png;base64,{b64}"
+    headers = {'X-API-KEY': PICWISH_KEY}
+    files = {'image': ('image.jpg', buf.getvalue(), 'image/jpeg')}
 
-    headers = {
-        'Authorization': f'Token {REPLICATE_TOKEN}',
-        'Content-Type': 'application/json'
-    }
+    r = requests.post('https://techhk.aoscdn.com/api/tasks/photo/upscale',
+                     headers=headers, files=files, data={'scale': 4, 'sync': 1}, timeout=60)
 
-    # Real-ESRGAN model
-    payload = {
-        "version": "f121d640bd286e1fdc67f9799164c1d5be36ff74576ee11c803ae5b665dd46aa",
-        "input": {
-            "image": img_data_uri,
-            "scale": scale,
-            "face_enhance": face_enhance
-        }
-    }
+    print(f"Picwish: {r.status_code} {r.text[:200]}")
+    if not r.ok: raise Exception(f"Status {r.status_code}")
 
-    # Create prediction
-    r = requests.post('https://api.replicate.com/v1/predictions',
-                     json=payload, headers=headers, timeout=30)
-    if not r.ok:
-        raise Exception(f"Replicate API error: {r.text}")
-
-    pred = r.json()
-    pred_id = pred['id']
-
-    # Poll for result
-    for _ in range(60):
-        time.sleep(2)
-        r2 = requests.get(f'https://api.replicate.com/v1/predictions/{pred_id}',
-                         headers=headers, timeout=15)
-        data = r2.json()
-        status = data.get('status')
-
-        if status == 'succeeded':
-            output_url = data.get('output')
-            if output_url:
-                img_r = requests.get(output_url, timeout=30)
-                return img_r.content
-            break
-        elif status == 'failed':
-            raise Exception("Replicate prediction failed")
-
-    return None
+    resp = r.json()
+    if resp.get('status') == 200:
+        data = resp.get('data', {})
+        url = data.get('image')
+        if url:
+            return requests.get(url, timeout=30).content
+        task_id = data.get('task_id')
+        if task_id:
+            for _ in range(30):
+                time.sleep(2)
+                r2 = requests.get(f'https://techhk.aoscdn.com/api/tasks/photo/upscale/{task_id}',
+                                  headers=headers, timeout=15)
+                d2 = r2.json()
+                if d2.get('status') == 200:
+                    url = d2.get('data', {}).get('image')
+                    if url: return requests.get(url, timeout=30).content
+    raise Exception(f"Picwish failed: {resp}")
 
 def enhance_pil(img_bytes, mode):
     img = Image.open(io.BytesIO(img_bytes)).convert('RGB')
-    arr = np.array(img).astype(np.float32)
-
+    w, h = img.size
+    # 4K upscale
+    tw = 3840
+    img = img.resize((tw, int(tw*h/w)), Image.LANCZOS)
+    # Blur removal simulation
+    img = img.filter(ImageFilter.SMOOTH)
+    img = ImageEnhance.Sharpness(img).enhance(4.0)
+    img = img.filter(ImageFilter.DETAIL)
+    img = img.filter(ImageFilter.SHARPEN)
     if mode == 'softv2':
-        arr = np.clip(np.power(arr/255.0, 0.88)*255.0, 0, 255)
-        img = Image.fromarray(arr.astype(np.uint8))
-        img = ImageEnhance.Color(img).enhance(1.35)
+        img = ImageEnhance.Color(img).enhance(1.3)
         img = ImageEnhance.Contrast(img).enhance(1.2)
-        img = ImageEnhance.Sharpness(img).enhance(2.5)
-        img = img.filter(ImageFilter.SMOOTH)
         img = ImageEnhance.Brightness(img).enhance(1.05)
     elif mode == 'sharp':
-        img = ImageEnhance.Sharpness(img).enhance(5.0)
-        img = img.filter(ImageFilter.SHARPEN)
-        img = img.filter(ImageFilter.SHARPEN)
+        img = ImageEnhance.Sharpness(img).enhance(3.0)
+        img = ImageEnhance.Contrast(img).enhance(1.4)
         img = img.filter(ImageFilter.EDGE_ENHANCE_MORE)
-        img = ImageEnhance.Contrast(img).enhance(1.3)
     else:  # soft
-        arr = np.clip(np.power(arr/255.0, 0.9)*255.0, 0, 255)
-        img = Image.fromarray(arr.astype(np.uint8))
-        img = ImageEnhance.Color(img).enhance(1.25)
+        img = ImageEnhance.Color(img).enhance(1.2)
         img = ImageEnhance.Contrast(img).enhance(1.15)
-        img = ImageEnhance.Sharpness(img).enhance(2.0)
-        img = img.filter(ImageFilter.SMOOTH)
-
     buf = io.BytesIO(); img.save(buf,'PNG'); buf.seek(0)
     return buf.getvalue()
 
@@ -303,7 +247,7 @@ def split_stems():
         zip_buf = io.BytesIO()
         with zipfile.ZipFile(zip_buf,'w') as zf:
             zf.writestr(filename, raw)
-            zf.writestr('README.txt', f'Error: {str(e)}\nPlease upload WAV.')
+            zf.writestr('README.txt', f'Error: {str(e)}')
         zip_buf.seek(0)
         return send_file(zip_buf, mimetype='application/zip', as_attachment=True, download_name='stems.zip')
 
