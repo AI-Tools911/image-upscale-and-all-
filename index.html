@@ -8,7 +8,12 @@
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet"/>
 <style>
 :root{--accent:#00e5ff;--bg:#0a0a0f;--surface:#13131e;--card:#1a1a2e;--text:#e8e8f0;--muted:#666680;--border:#2a2a40;--green:#00ff88}
-.theme-blue{--accent:#00e5ff}.theme-red{--accent:#ff3b3b}.theme-yellow{--accent:#ffe600}.theme-brown{--accent:#c97c3a}.theme-black{--accent:#aaa}
+.theme-blue{--accent:#00e5ff}
+.theme-red{--accent:#ff3b3b}
+.theme-yellow{--accent:#ffe600}
+.theme-brown{--accent:#c97c3a}
+.theme-black{--accent:#aaa}
+.theme-white{--accent:#0066ff;--bg:#f5f5f5;--surface:#ffffff;--card:#eeeeee;--text:#111111;--muted:#666666;--border:#cccccc}
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:Rajdhani,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;transition:background .4s}
 nav{position:fixed;top:0;left:0;right:0;z-index:1000;background:rgba(10,10,15,.96);backdrop-filter:blur(14px);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 1.5rem;height:62px;gap:10px;flex-wrap:wrap}
@@ -161,7 +166,7 @@ nav{position:fixed;top:0;left:0;right:0;z-index:1000;background:rgba(10,10,15,.9
 .toast.show{transform:translateY(0);opacity:1}
 @media(max-width:700px){.home-demos{grid-template-columns:1fr}.nav-links{display:none}.compare-wrap,.pgrid{grid-template-columns:1fr}}
 </style></head>
-<body class="theme-blue">
+<body class="theme-white">
 
 <!-- ═══ NAVBAR ═══ -->
 <nav>
