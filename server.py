@@ -12,6 +12,7 @@ except ImportError:
 
 REPLICATE_TOKEN = ''
 PICWISH_KEY = 'wxkmi7q6hdt31r4k1'
+DEEP_IMAGE_KEY = 'a15686f0-1970-11f1-ab4c-05baad7d604f'
 
 app = Flask(__name__, static_folder='.', static_url_path='')
 app.secret_key = 'iua-secret-key-2024'
@@ -135,7 +136,17 @@ def enhance_image():
     mode = request.form.get('mode','soft')
     img_bytes = request.files['image'].read()
 
-    # Try Picwish API first
+    # Try Deep-Image first — best blur removal
+    if DEEP_IMAGE_KEY:
+        try:
+            result = enhance_deepimage(img_bytes, mode)
+            if result:
+                return send_file(io.BytesIO(result), mimetype='image/png',
+                                as_attachment=True, download_name=f'enhanced-{mode}.png')
+        except Exception as e:
+            print(f"Deep-Image error: {e}")
+
+    # Try Picwish second
     if PICWISH_KEY:
         try:
             result = enhance_replicate(img_bytes, mode)
@@ -143,12 +154,49 @@ def enhance_image():
                 return send_file(io.BytesIO(result), mimetype='image/png',
                                 as_attachment=True, download_name=f'enhanced-{mode}.png')
         except Exception as e:
-            print(f"Replicate error: {e}")
+            print(f"Picwish error: {e}")
 
     # Fallback to PIL
     result = enhance_pil(img_bytes, mode)
     return send_file(io.BytesIO(result), mimetype='image/png',
                     as_attachment=True, download_name=f'enhanced-{mode}.png')
+
+def enhance_deepimage(img_bytes, mode):
+    # Deep-Image.ai — best blur removal
+    headers = {
+        "x-api-key": DEEP_IMAGE_KEY,
+        "Content-Type": "application/json"
+    }
+    
+    # Convert to base64
+    b64 = base64.b64encode(img_bytes).decode()
+    
+    payload = {
+        "url": f"data:image/jpeg;base64,{b64}",
+        "enhancements": ["upscale", "deblur", "denoise", "light"],
+        "output_format": "jpg",
+        "width": 3840
+    }
+    
+    r = requests.post(
+        "https://deep-image.ai/rest_api/process_result",
+        json=payload,
+        headers=headers,
+        timeout=120
+    )
+    
+    if not r.ok:
+        raise Exception(f"Deep-Image error: {r.status_code} {r.text}")
+    
+    resp = r.json()
+    print(f"Deep-Image response: {resp}")
+    
+    output_url = resp.get("output_url") or resp.get("url") or resp.get("result_url")
+    if output_url:
+        img_r = requests.get(output_url, timeout=60)
+        return img_r.content
+    
+    raise Exception(f"No output URL: {resp}")
 
 def enhance_replicate(img_bytes, mode):
     # Scale based on mode
