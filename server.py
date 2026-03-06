@@ -168,26 +168,14 @@ def enhance_hf(img_bytes):
 def enhance_pil(img_bytes, mode):
     img = Image.open(io.BytesIO(img_bytes)).convert('RGB')
     w, h = img.size
+    # Sirf blur remove — koi color/brightness change nahi
     img = img.filter(ImageFilter.MedianFilter(size=3))
     img = img.filter(ImageFilter.UnsharpMask(radius=2, percent=180, threshold=2))
+    # 4K upscale
     tw = 3840
     img = img.resize((tw, int(tw*h/w)), Image.LANCZOS)
+    # Post sharpen only
     img = img.filter(ImageFilter.UnsharpMask(radius=1.5, percent=150, threshold=2))
-    img = img.filter(ImageFilter.DETAIL)
-    if mode == 'soft':
-        img = ImageEnhance.Color(img).enhance(1.2)
-        img = ImageEnhance.Contrast(img).enhance(1.1)
-        img = ImageEnhance.Brightness(img).enhance(1.03)
-    elif mode == 'softv2':
-        img = ImageEnhance.Color(img).enhance(1.35)
-        img = ImageEnhance.Contrast(img).enhance(1.25)
-        img = ImageEnhance.Sharpness(img).enhance(2.0)
-        img = ImageEnhance.Brightness(img).enhance(1.06)
-    elif mode == 'sharp':
-        img = ImageEnhance.Sharpness(img).enhance(3.5)
-        img = img.filter(ImageFilter.SHARPEN)
-        img = img.filter(ImageFilter.EDGE_ENHANCE)
-        img = ImageEnhance.Contrast(img).enhance(1.35)
     buf = io.BytesIO()
     img.save(buf, 'PNG')
     buf.seek(0)
