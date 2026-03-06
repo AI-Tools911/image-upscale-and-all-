@@ -10,8 +10,7 @@ try:
 except ImportError:
     HAS_REMBG = False
 
-PICWISH_KEY = 'wxkmi7q6hdt31r4k1'
-DEEP_IMAGE_KEY = 'a15686f0-1970-11f1-ab4c-05baad7d604f'
+HF_TOKEN = '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'
 
 app = Flask(__name__, static_folder='.', static_url_path='')
 app.secret_key = 'iua-secret-key-2024'
@@ -117,121 +116,64 @@ def upscale_image():
     buf = io.BytesIO(); up.save(buf,'PNG'); buf.seek(0)
     return send_file(buf, mimetype='image/png', as_attachment=True, download_name=f'upscaled-{scale}.png')
 
-# ── ENHANCER ──
+# ── ENHANCER — HuggingFace Real-ESRGAN ──
 @app.route('/enhance', methods=['POST'])
 def enhance_image():
     if 'image' not in request.files: return jsonify({'error':'No image'}), 400
     mode = request.form.get('mode', 'soft')
     img_bytes = request.files['image'].read()
 
-    # Try Deep-Image first
+    # Try HuggingFace Real-ESRGAN
     try:
-        result = enhance_deepimage(img_bytes)
+        result = enhance_hf(img_bytes)
         if result:
             return send_file(io.BytesIO(result), mimetype='image/png',
                            as_attachment=True, download_name=f'enhanced-{mode}.png')
     except Exception as e:
-        print(f"Deep-Image failed: {e}")
-
-    # Try Picwish second
-    try:
-        result = enhance_picwish(img_bytes)
-        if result:
-            return send_file(io.BytesIO(result), mimetype='image/png',
-                           as_attachment=True, download_name=f'enhanced-{mode}.png')
-    except Exception as e:
-        print(f"Picwish failed: {e}")
+        print(f"HF error: {e}")
 
     # PIL fallback
     result = enhance_pil(img_bytes, mode)
     return send_file(io.BytesIO(result), mimetype='image/png',
                    as_attachment=True, download_name=f'enhanced-{mode}.png')
 
-def enhance_deepimage(img_bytes):
+def enhance_hf(img_bytes):
+    # Resize if too large — HF has limits
     img = Image.open(io.BytesIO(img_bytes)).convert('RGB')
+    w, h = img.size
+    if w > 1024 or h > 1024:
+        ratio = min(1024/w, 1024/h)
+        img = img.resize((int(w*ratio), int(h*ratio)), Image.LANCZOS)
     buf = io.BytesIO()
-    img.save(buf, 'JPEG', quality=95)
-    b64 = base64.b64encode(buf.getvalue()).decode()
+    img.save(buf, 'PNG')
+    img_bytes = buf.getvalue()
 
-    headers = {
-        'x-api-key': DEEP_IMAGE_KEY,
-        'Content-Type': 'application/json'
-    }
-    payload = {
-        'url': f'data:image/jpeg;base64,{b64}',
-        'enhancements': ['upscale', 'deblur', 'denoise'],
-        'output_format': 'jpg',
-        'width': 3840
-    }
+    headers = {'Authorization': f'Bearer {HF_TOKEN}'}
 
-    r = requests.post('https://deep-image.ai/rest_api/process_result',
-                     json=payload, headers=headers, timeout=120)
+    # Real-ESRGAN x4plus model
+    r = requests.post(
+        'https://api-inference.huggingface.co/models/ai-forever/Real-ESRGAN',
+        headers=headers,
+        data=img_bytes,
+        timeout=120
+    )
 
-    print(f"Deep-Image: {r.status_code} | {r.text[:300]}")
+    print(f"HF status: {r.status_code} | {r.text[:200]}")
 
-    if not r.ok:
-        raise Exception(f"Deep-Image {r.status_code}: {r.text[:100]}")
+    if r.ok and r.headers.get('content-type','').startswith('image'):
+        return r.content
 
-    resp = r.json()
-    url = (resp.get('output_url') or resp.get('url') or
-           resp.get('result_url') or resp.get('image'))
-    if url:
-        img_data = requests.get(url, timeout=60).content
-        return img_data
-
-    raise Exception(f"No URL: {resp}")
-
-def enhance_picwish(img_bytes):
-    img = Image.open(io.BytesIO(img_bytes)).convert('RGB')
-    buf = io.BytesIO()
-    img.save(buf, 'JPEG', quality=95)
-
-    headers = {'X-API-KEY': PICWISH_KEY}
-    files = {'image': ('image.jpg', buf.getvalue(), 'image/jpeg')}
-
-    r = requests.post('https://techhk.aoscdn.com/api/tasks/photo/upscale',
-                     headers=headers, files=files,
-                     data={'scale': 4, 'sync': 1}, timeout=60)
-
-    print(f"Picwish: {r.status_code} | {r.text[:300]}")
-
-    if not r.ok:
-        raise Exception(f"Picwish {r.status_code}")
-
-    resp = r.json()
-    if resp.get('status') == 200:
-        data = resp.get('data', {})
-        url = data.get('image')
-        if url:
-            return requests.get(url, timeout=30).content
-        task_id = data.get('task_id')
-        if task_id:
-            for _ in range(30):
-                time.sleep(2)
-                r2 = requests.get(
-                    f'https://techhk.aoscdn.com/api/tasks/photo/upscale/{task_id}',
-                    headers=headers, timeout=15)
-                d2 = r2.json()
-                if d2.get('status') == 200:
-                    url = d2.get('data', {}).get('image')
-                    if url:
-                        return requests.get(url, timeout=30).content
-    raise Exception(f"Picwish failed: {resp}")
+    raise Exception(f"HF failed: {r.status_code} {r.text[:100]}")
 
 def enhance_pil(img_bytes, mode):
     img = Image.open(io.BytesIO(img_bytes)).convert('RGB')
     w, h = img.size
-    # Denoise
     img = img.filter(ImageFilter.MedianFilter(size=3))
-    # Unsharp mask — real blur removal
     img = img.filter(ImageFilter.UnsharpMask(radius=2, percent=180, threshold=2))
-    # 4K upscale
     tw = 3840
     img = img.resize((tw, int(tw*h/w)), Image.LANCZOS)
-    # Post sharpen
     img = img.filter(ImageFilter.UnsharpMask(radius=1.5, percent=150, threshold=2))
     img = img.filter(ImageFilter.DETAIL)
-    # Mode
     if mode == 'soft':
         img = ImageEnhance.Color(img).enhance(1.2)
         img = ImageEnhance.Contrast(img).enhance(1.1)
