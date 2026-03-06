@@ -2,6 +2,5 @@ flask
 flask-cors
 Pillow
 numpy
-rembg
-scipy
+rembg[cpu]
 requests
