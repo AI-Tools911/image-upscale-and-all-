@@ -11,6 +11,7 @@ let wfPlaying = false;
 let freeSecondsLeft = 0;
 let timerInterval = null;
 let isPremium = false;
+let countryData = {};
 
 // ── INIT ──
 window.onload = async () => {
@@ -99,6 +100,10 @@ async function fetchOnline() {
     const d = await r.json();
     const el = document.getElementById('online-count');
     if (el) el.textContent = d.count;
+    if (d.countries) {
+      countryData = d.countries;
+      renderCountryList();
+    }
   } catch(e) {}
 }
 
@@ -248,34 +253,6 @@ async function doSignup() {
   } catch(e){document.getElementById('serr').textContent='Server error';}
 }
 
-function googleSignIn() {
-  // Real Google OAuth via Google Identity Services
-  if (typeof google !== 'undefined' && google.accounts) {
-    google.accounts.id.initialize({
-      client_id: 'YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com',
-      callback: handleGoogleCredential,
-      auto_select: false,
-      cancel_on_tap_outside: true
-    });
-    google.accounts.id.prompt((notification) => {
-      if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
-        // Fallback: show Google OAuth popup
-        const width = 500, height = 600;
-        const left = (screen.width - width) / 2;
-        const top = (screen.height - height) / 2;
-        const popup = window.open(
-          `https://accounts.google.com/o/oauth2/v2/auth?client_id=YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com&redirect_uri=${encodeURIComponent(window.location.origin+'/auth/google/callback')}&response_type=code&scope=openid%20email%20profile`,
-          'Google Sign In',
-          `width=${width},height=${height},left=${left},top=${top}`
-        );
-      }
-    });
-  } else {
-    // Google SDK not loaded — use server-side redirect
-    window.location.href = '/auth/google';
-  }
-}
-
 async function handleGoogleCredential(response) {
   try {
     const r = await fetch('/api/google-auth', {
@@ -290,9 +267,18 @@ async function handleGoogleCredential(response) {
       closeModal('login-modal');
       toast('🎉 Welcome, ' + d.name + '!');
     } else {
-      toast('❌ Google sign-in failed');
+      toast('❌ Google sign-in failed: ' + (d.error||''));
     }
   } catch(e) { toast('❌ Google sign-in error'); }
+}
+
+function googleSignIn() {
+  // Trigger Google One Tap manually
+  if (typeof google !== 'undefined' && google.accounts) {
+    google.accounts.id.prompt();
+  } else {
+    toast('❌ Google Sign-In not loaded. Set GOOGLE_CLIENT_ID first.');
+  }
 }
 
 function setUser(name, plan) {
@@ -392,7 +378,6 @@ async function doStripePayment() {
 }
 
 // ── COUNTRY COUNTER ──
-let countryData = {};
 
 function toggleCountryList() {
   const dd = document.getElementById('country-dropdown');
@@ -406,21 +391,6 @@ document.addEventListener('click', (e) => {
     if (dd) dd.style.display = 'none';
   }
 });
-
-async function fetchOnline() {
-  try {
-    const r = await fetch('/api/online', { credentials: 'include' });
-    const d = await r.json();
-    const el = document.getElementById('online-count');
-    if (el) el.textContent = d.count;
-
-    // Update country list
-    if (d.countries) {
-      countryData = d.countries;
-      renderCountryList();
-    }
-  } catch(e) {}
-}
 
 function renderCountryList() {
   const list = document.getElementById('country-list');
