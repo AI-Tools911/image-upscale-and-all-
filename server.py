@@ -29,16 +29,22 @@ CORS(app, supports_credentials=True, origins='*')
 
 USERS = {}
 ONLINE = {}      # sid -> {time, country}
+IP_CACHE = {}    # ip -> country (cache to avoid repeated API calls)
 
 def hash_pass(p): return hashlib.sha256(p.encode()).hexdigest()
 
 def get_country_from_ip(ip):
     try:
-        if ip in ('127.0.0.1', '::1', '0.0.0.0'): return 'Local'
-        r = requests.get(f'https://ipapi.co/{ip}/country_name/', timeout=3)
-        return r.text.strip() or 'Unknown'
+        if not ip or ip in ('127.0.0.1', '::1', '0.0.0.0', 'localhost'): 
+            return 'Pakistan'  # default for local
+        # Try ip-api.com (free, fast, no key needed)
+        r = requests.get(f'http://ip-api.com/json/{ip}?fields=country', timeout=2)
+        if r.ok:
+            data = r.json()
+            return data.get('country', 'Unknown')
     except:
-        return 'Unknown'
+        pass
+    return 'Unknown'
 
 def send_email_notification(subject, body):
     """Send Gmail notification via Gmail API or simple SMTP"""
@@ -70,7 +76,10 @@ def track_online():
         sid = session['_id']
     ip = request.headers.get('X-Forwarded-For', request.remote_addr or '').split(',')[0].strip()
     if sid not in ONLINE:
-        country = get_country_from_ip(ip)
+        # Use cache to avoid repeated API calls
+        if ip not in IP_CACHE:
+            IP_CACHE[ip] = get_country_from_ip(ip)
+        country = IP_CACHE[ip]
         ONLINE[sid] = {'time': time.time(), 'country': country}
     else:
         ONLINE[sid]['time'] = time.time()
