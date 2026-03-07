@@ -249,14 +249,50 @@ async function doSignup() {
 }
 
 function googleSignIn() {
-  const name=prompt('Google Sign In\n\nEnter your name:')||'Google User';
-  const email=prompt('Enter your Gmail:')||'user@gmail.com';
-  if(!name||!email)return;
-  fetch('/api/signup',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,email,password:'google_'+Date.now()})})
-    .then(r=>r.json()).then(d=>{
-      setUser(d.name||name,d.plan||'free');
-      closeModal('login-modal'); toast('🎉 Welcome, '+(d.name||name)+'!');
-    }).catch(()=>{setUser(name,'free');closeModal('login-modal');toast('👋 Welcome, '+name+'!');});
+  // Real Google OAuth via Google Identity Services
+  if (typeof google !== 'undefined' && google.accounts) {
+    google.accounts.id.initialize({
+      client_id: 'YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com',
+      callback: handleGoogleCredential,
+      auto_select: false,
+      cancel_on_tap_outside: true
+    });
+    google.accounts.id.prompt((notification) => {
+      if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+        // Fallback: show Google OAuth popup
+        const width = 500, height = 600;
+        const left = (screen.width - width) / 2;
+        const top = (screen.height - height) / 2;
+        const popup = window.open(
+          `https://accounts.google.com/o/oauth2/v2/auth?client_id=YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com&redirect_uri=${encodeURIComponent(window.location.origin+'/auth/google/callback')}&response_type=code&scope=openid%20email%20profile`,
+          'Google Sign In',
+          `width=${width},height=${height},left=${left},top=${top}`
+        );
+      }
+    });
+  } else {
+    // Google SDK not loaded — use server-side redirect
+    window.location.href = '/auth/google';
+  }
+}
+
+async function handleGoogleCredential(response) {
+  try {
+    const r = await fetch('/api/google-auth', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ credential: response.credential })
+    });
+    const d = await r.json();
+    if (d.success) {
+      setUser(d.name, d.plan);
+      closeModal('login-modal');
+      toast('🎉 Welcome, ' + d.name + '!');
+    } else {
+      toast('❌ Google sign-in failed');
+    }
+  } catch(e) { toast('❌ Google sign-in error'); }
 }
 
 function setUser(name, plan) {
@@ -281,35 +317,136 @@ function openPricing() {
   document.getElementById('price-modal').classList.add('show');
 }
 
-function selectPlan(plan,price,card) {
-  curPlan=plan;
-  document.querySelectorAll('.pcard').forEach(c=>{c.style.opacity='0.6';c.style.borderColor='';});
-  card.style.opacity='1'; card.style.borderColor='var(--accent)';
-  document.getElementById('pay-plan-title').textContent=`PAYMENT — ${plan.toUpperCase()} ${price}`;
+// ── STRIPE PAYMENT ──
+let stripe = null;
+let stripeCard = null;
+const PLAN_PRICES = { weekly: 200, monthly: 500, yearly: 1500, lifetime: 3000 }; // cents
+
+function selectPlan(plan, price, card) {
+  curPlan = plan;
+  document.querySelectorAll('.pcard').forEach(c => { c.style.opacity='0.6'; c.style.borderColor=''; });
+  card.style.opacity = '1'; card.style.borderColor = 'var(--accent)';
+  document.getElementById('pay-plan-title').textContent = `PAYMENT — ${plan.toUpperCase()} ${price}`;
   document.getElementById('pay-form').classList.add('show');
+
+  // Init Stripe
+  if (!stripe) {
+    stripe = Stripe('pk_live_YOUR_STRIPE_PUBLISHABLE_KEY'); // Replace with your key
+    const elements = stripe.elements();
+    stripeCard = elements.create('card', {
+      style: {
+        base: { color: getComputedStyle(document.body).getPropertyValue('--text') || '#fff', fontSize: '16px', '::placeholder': { color: '#888' } }
+      }
+    });
+    stripeCard.mount('#stripe-card-element');
+  }
 }
 
-function fmtCard(input) {
-  let v=input.value.replace(/\D/g,'').substring(0,16);
-  input.value=v.replace(/(.{4})/g,'$1 ').trim();
-}
+async function doStripePayment() {
+  const name = document.getElementById('pay-name').value.trim();
+  const email = document.getElementById('pay-email').value.trim();
+  document.getElementById('pay-err').textContent = '';
 
-async function doPayment() {
-  const name=document.getElementById('pay-name').value.trim();
-  const card=document.getElementById('pay-card').value.trim();
-  const exp=document.getElementById('pay-exp').value.trim();
-  const cvv=document.getElementById('pay-cvv').value.trim();
-  const email=document.getElementById('pay-email').value.trim();
-  document.getElementById('pay-err').textContent='';
-  if(!name||!card||!exp||!cvv||!email){document.getElementById('pay-err').textContent='Please fill all fields';return;}
+  if (!name || !email) { document.getElementById('pay-err').textContent = 'Fill all fields'; return; }
+  if (!stripe || !stripeCard) { document.getElementById('pay-err').textContent = 'Payment not ready'; return; }
+
+  const btn = document.getElementById('pay-btn');
+  btn.textContent = 'Processing...'; btn.disabled = true;
+
   try {
-    await fetch('/api/unlock',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({plan:curPlan})});
-    isPremium=true;
-    document.getElementById('free-timer').style.display='none';
-    closeModal('price-modal');
-    document.getElementById('pay-form').classList.remove('show');
-    toast('🎉 Payment done! '+curPlan+' plan active!');
-  } catch(e){document.getElementById('pay-err').textContent='Payment failed.';}
+    // Step 1: Create PaymentIntent on server
+    const r = await fetch('/api/create-payment-intent', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ plan: curPlan, email, name })
+    });
+    const { clientSecret, error: serverError } = await r.json();
+    if (serverError) throw new Error(serverError);
+
+    // Step 2: Confirm card payment via Stripe
+    const { error, paymentIntent } = await stripe.confirmCardPayment(clientSecret, {
+      payment_method: { card: stripeCard, billing_details: { name, email } }
+    });
+
+    if (error) throw new Error(error.message);
+
+    if (paymentIntent.status === 'succeeded') {
+      // Step 3: Activate plan on server
+      await fetch('/api/unlock', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ plan: curPlan, payment_intent: paymentIntent.id })
+      });
+      isPremium = true;
+      document.getElementById('free-timer').style.display = 'none';
+      closeModal('price-modal');
+      document.getElementById('pay-form').classList.remove('show');
+      toast('🎉 Payment success! ' + curPlan + ' plan active!');
+    }
+  } catch(e) {
+    document.getElementById('pay-err').textContent = '❌ ' + e.message;
+  }
+  btn.textContent = '💳 PAY NOW'; btn.disabled = false;
+}
+
+// ── COUNTRY COUNTER ──
+let countryData = {};
+
+function toggleCountryList() {
+  const dd = document.getElementById('country-dropdown');
+  dd.style.display = dd.style.display === 'none' ? 'block' : 'none';
+}
+
+document.addEventListener('click', (e) => {
+  const box = document.getElementById('shehryar-box');
+  if (box && !box.contains(e.target)) {
+    const dd = document.getElementById('country-dropdown');
+    if (dd) dd.style.display = 'none';
+  }
+});
+
+async function fetchOnline() {
+  try {
+    const r = await fetch('/api/online', { credentials: 'include' });
+    const d = await r.json();
+    const el = document.getElementById('online-count');
+    if (el) el.textContent = d.count;
+
+    // Update country list
+    if (d.countries) {
+      countryData = d.countries;
+      renderCountryList();
+    }
+  } catch(e) {}
+}
+
+function renderCountryList() {
+  const list = document.getElementById('country-list');
+  if (!list) return;
+  const entries = Object.entries(countryData).sort((a, b) => b[1] - a[1]);
+  if (!entries.length) {
+    list.innerHTML = '<div style="color:var(--muted);text-align:center">No data yet</div>';
+    return;
+  }
+  list.innerHTML = entries.map(([country, count]) =>
+    `<div style="display:flex;justify-content:space-between;align-items:center;padding:3px 0;border-bottom:1px solid var(--border)">
+      <span>${getFlagEmoji(country)} ${country}</span>
+      <span style="color:var(--accent);font-weight:700">${count}</span>
+    </div>`
+  ).join('');
+}
+
+function getFlagEmoji(country) {
+  const flags = {
+    'Pakistan':'🇵🇰','United States':'🇺🇸','India':'🇮🇳','United Kingdom':'🇬🇧',
+    'Germany':'🇩🇪','France':'🇫🇷','Canada':'🇨🇦','Australia':'🇦🇺',
+    'Saudi Arabia':'🇸🇦','UAE':'🇦🇪','Turkey':'🇹🇷','Bangladesh':'🇧🇩',
+    'Indonesia':'🇮🇩','Brazil':'🇧🇷','Nigeria':'🇳🇬','Philippines':'🇵🇭',
+    'Unknown':'🌍'
+  };
+  return flags[country] || '🌍';
 }
 
 // ── DRAG & DROP ──
@@ -401,14 +538,35 @@ async function handleUps(input) {
 
 // ── ENHANCER ──
 function selMode(btn,val) {
-  document.querySelectorAll('.mbtn').forEach(b=>b.classList.remove('on'));
+  document.querySelectorAll('.hp-mode-btn,.mbtn').forEach(b=>b.classList.remove('on'));
   btn.classList.add('on'); curMode=val;
+}
+
+function resetEnhancer() {
+  document.getElementById('enh-prev').classList.remove('show');
+  document.getElementById('enh-zone').style.display='';
+  document.getElementById('enh-in').value='';
+}
+
+async function loadSampleEnh(src) {
+  if(!checkFreeLimit())return;
+  try {
+    const resp = await fetch(src);
+    const blob = await resp.blob();
+    const file = new File([blob], 'sample.jpg', {type: blob.type});
+    const dt = new DataTransfer();
+    dt.items.add(file);
+    const input = document.getElementById('enh-in');
+    input.files = dt.files;
+    handleEnh(input);
+  } catch(e) { toast('❌ Could not load sample'); }
 }
 
 async function handleEnh(input) {
   if(!checkFreeLimit())return;
   const file=input.files[0]; if(!file)return;
   document.getElementById('enh-bef').src=URL.createObjectURL(file);
+  document.getElementById('enh-zone').style.display='none';
   document.getElementById('enh-proc').classList.add('show');
   document.getElementById('enh-prev').classList.remove('show');
   const fd=new FormData(); fd.append('image',file); fd.append('mode',curMode);
@@ -423,7 +581,11 @@ async function handleEnh(input) {
     document.getElementById('enh-prev').classList.add('show');
     setTimeout(initEnhSlider, 150);
     toast(`✅ Enhanced (${curMode})!`);
-  } catch(e){document.getElementById('enh-proc').classList.remove('show');toast('❌ '+e.message);}
+  } catch(e){
+    document.getElementById('enh-proc').classList.remove('show');
+    document.getElementById('enh-zone').style.display='';
+    toast('❌ '+e.message);
+  }
   input.value='';
 }
 
@@ -534,25 +696,27 @@ function fmtTime(s){if(isNaN(s))return'00:00';const m=Math.floor(s/60);const sec
 // ── HITPAW ENHANCER SLIDER ──
 function initEnhSlider() {
   const wrap = document.getElementById('enh-slider-wrap');
-  const before = document.getElementById('enh-bef');
+  const after = document.getElementById('enh-aft');
+  const line = document.getElementById('enh-line');
   const handle = document.getElementById('enh-handle');
-  if (!wrap || !before || !handle) return;
+  if (!wrap || !after || !line) return;
 
   let drag = false;
 
   function setPos(x) {
     const r = wrap.getBoundingClientRect();
     let p = Math.min(Math.max(((x - r.left) / r.width) * 100, 0), 100);
-    before.style.clipPath = `inset(0 ${100 - p}% 0 0)`;
-    handle.style.left = p + "%";
+    after.style.clipPath = `inset(0 ${100 - p}% 0 0)`;
+    line.style.left = p + '%';
+    if(handle) handle.style.left = p + '%';
   }
 
-  wrap.addEventListener("mousedown", e => { drag = true; setPos(e.clientX); });
-  window.addEventListener("mousemove", e => { if (drag) setPos(e.clientX); });
-  window.addEventListener("mouseup", () => drag = false);
-  wrap.addEventListener("touchstart", e => { drag = true; setPos(e.touches[0].clientX); }, { passive: true });
-  window.addEventListener("touchmove", e => { if (drag) setPos(e.touches[0].clientX); }, { passive: true });
-  window.addEventListener("touchend", () => drag = false);
+  wrap.addEventListener('mousedown', e => { drag = true; setPos(e.clientX); });
+  window.addEventListener('mousemove', e => { if (drag) setPos(e.clientX); });
+  window.addEventListener('mouseup', () => drag = false);
+  wrap.addEventListener('touchstart', e => { drag = true; setPos(e.touches[0].clientX); }, { passive: true });
+  window.addEventListener('touchmove', e => { if (drag) setPos(e.touches[0].clientX); }, { passive: true });
+  window.addEventListener('touchend', () => drag = false);
 
   setPos(wrap.getBoundingClientRect().width / 2);
 }
