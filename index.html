@@ -190,10 +190,16 @@ nav{position:fixed;top:0;left:0;right:0;z-index:1000;background:rgba(10,10,15,.9
     <a onclick="goTool('bgr')" id="nav-bgr">BG REMOVER</a>
   </div>
   <div class="nav-right">
-    <!-- ONLINE USERS -->
-    <div class="online-box">
+    <!-- SHEHRYAR COUNTRY COUNTER BOX -->
+    <div class="online-box shehryar-box" id="shehryar-box" onclick="toggleCountryList()" style="cursor:pointer;position:relative;user-select:none">
       <span class="online-dot"></span>
-      <span>Online Users: <b id="online-count">1</b></span>
+      <span>🌍 <b id="online-count">1</b> Online</span>
+      <span style="font-size:.7rem;opacity:.7;margin-left:2px">▼</span>
+      <!-- Country dropdown -->
+      <div class="country-dropdown" id="country-dropdown" style="display:none;position:absolute;top:110%;right:0;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:.8rem 1rem;min-width:200px;z-index:999;box-shadow:0 8px 30px rgba(0,0,0,.3)">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:.85rem;letter-spacing:2px;color:var(--accent);margin-bottom:.6rem;text-align:center">SHEHRYAR — LIVE VISITORS</div>
+        <div id="country-list" style="display:flex;flex-direction:column;gap:5px;max-height:200px;overflow-y:auto;font-size:.82rem"></div>
+      </div>
     </div>
     <!-- FREE TIMER -->
     <div class="free-timer" id="free-timer">
@@ -272,36 +278,163 @@ nav{position:fixed;top:0;left:0;right:0;z-index:1000;background:rgba(10,10,15,.9
 
 <!-- ═══ ENHANCER PAGE ═══ -->
 <div class="page" id="page-enh">
-  <div class="tool-page">
-    <h2>✨ Image Enhancer</h2>
-    <p class="sub">HitPaw level — Real AI enhancement</p>
+  <style>
+  .hp-page-wrap{max-width:1200px;margin:0 auto;padding:2rem 1.5rem}
+  .hp-top-bar{display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:1.5rem;margin-bottom:2rem}
+  .hp-top-left h2{font-family:"Bebas Neue",sans-serif;font-size:2.4rem;letter-spacing:3px;color:var(--accent);margin-bottom:.2rem}
+  .hp-top-left p{color:var(--muted);font-size:.95rem}
+  .hp-modes-panel{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:1rem;display:flex;flex-direction:column;gap:8px;min-width:220px}
+  .hp-modes-panel .panel-title{font-family:"Bebas Neue",sans-serif;font-size:.85rem;letter-spacing:2px;color:var(--muted);margin-bottom:4px}
+  .hp-mode-btn{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:10px;border:2px solid var(--border);background:var(--surface);color:var(--text);cursor:pointer;font-family:Rajdhani,sans-serif;font-weight:700;font-size:.95rem;transition:all .2s;text-align:left}
+  .hp-mode-btn:hover{border-color:var(--accent);background:var(--card)}
+  .hp-mode-btn.on{border-color:var(--accent);background:var(--accent);color:#000}
+  .hp-mode-icon{font-size:1.2rem;flex-shrink:0}
+  .hp-mode-text{display:flex;flex-direction:column;gap:1px}
+  .hp-mode-name{font-size:.92rem;font-weight:700}
+  .hp-mode-desc{font-size:.72rem;opacity:.7;font-weight:400}
+  .hp-main-area{display:grid;grid-template-columns:1fr 320px;gap:1.5rem;align-items:start}
+  .hp-left-col{display:flex;flex-direction:column;gap:1rem}
+  .hp-upload-box{border:2px dashed var(--border);border-radius:16px;padding:3rem 2rem;text-align:center;cursor:pointer;background:var(--card);transition:all .25s;position:relative}
+  .hp-upload-box:hover,.hp-upload-box.dragover{border-color:var(--accent);background:var(--surface)}
+  .hp-upload-box input{display:none}
+  .hp-upload-icon{font-size:3.5rem;margin-bottom:.8rem}
+  .hp-upload-box h3{font-family:"Bebas Neue",sans-serif;font-size:1.5rem;letter-spacing:2px;color:var(--text);margin-bottom:.3rem}
+  .hp-upload-box p{color:var(--muted);font-size:.88rem}
+  .hp-upload-btn{display:inline-block;margin-top:1rem;background:var(--accent);color:#000;border:none;padding:11px 32px;border-radius:9px;font-family:"Bebas Neue",sans-serif;font-size:1.05rem;letter-spacing:2px;cursor:pointer}
+  .hp-sample-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .hp-sample-label{color:var(--muted);font-size:.82rem;font-weight:700;white-space:nowrap}
+  .hp-sample-thumb{width:52px;height:52px;border-radius:8px;object-fit:cover;cursor:pointer;border:2px solid var(--border);transition:all .2s}
+  .hp-sample-thumb:hover{border-color:var(--accent);transform:scale(1.08)}
+  .hp-right-col{display:flex;flex-direction:column;gap:1rem}
+  .hp-info-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:1.2rem}
+  .hp-info-card h4{font-family:"Bebas Neue",sans-serif;font-size:1rem;letter-spacing:2px;color:var(--accent);margin-bottom:.8rem}
+  .hp-feature-list{display:flex;flex-direction:column;gap:7px}
+  .hp-feature{display:flex;align-items:center;gap:8px;font-size:.88rem;color:var(--text)}
+  .hp-feature-icon{color:var(--accent);font-size:.9rem;flex-shrink:0}
+
+  /* RESULT AREA — full width slider */
+  .hp-result-area{display:none;margin-top:1.5rem}
+  .hp-result-area.show{display:block}
+  .hp-slider-container{position:relative;width:100%;border-radius:16px;overflow:hidden;border:2px solid var(--border);background:#000;cursor:ew-resize;user-select:none;box-shadow:0 8px 40px rgba(0,0,0,.3)}
+  .hp-slide-before{display:block;width:100%;height:auto;max-height:560px;object-fit:contain}
+  .hp-slide-after{position:absolute;top:0;left:0;width:100%;height:100%;object-fit:contain;clip-path:inset(0 50% 0 0)}
+  .hp-slide-line{position:absolute;top:0;bottom:0;left:50%;transform:translateX(-50%);width:3px;background:#fff;box-shadow:0 0 12px rgba(255,255,255,.8);pointer-events:none}
+  .hp-slide-handle{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:44px;height:44px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 16px rgba(0,0,0,.5);pointer-events:none;z-index:10;font-size:.85rem;font-weight:900;color:#333}
+  .hp-slide-tag{position:absolute;top:14px;background:rgba(0,0,0,.65);color:#fff;font-size:.78rem;font-weight:700;padding:4px 14px;border-radius:20px;letter-spacing:1px;z-index:5}
+  .hp-slide-tag-l{left:14px}
+  .hp-slide-tag-r{right:14px}
+  .hp-result-actions{display:flex;align-items:center;gap:12px;margin-top:1rem;flex-wrap:wrap}
+  .hp-dl-btn{background:var(--accent);color:#000;border:none;padding:13px 38px;border-radius:10px;font-family:"Bebas Neue",sans-serif;font-size:1.1rem;letter-spacing:2px;cursor:pointer;transition:all .2s;text-decoration:none;display:inline-block}
+  .hp-dl-btn:hover{opacity:.85;transform:scale(1.03)}
+  .hp-new-btn{background:transparent;border:1px solid var(--border);color:var(--text);padding:13px 28px;border-radius:10px;font-family:"Bebas Neue",sans-serif;font-size:1rem;letter-spacing:1px;cursor:pointer;transition:all .2s}
+  .hp-new-btn:hover{border-color:var(--accent);color:var(--accent)}
+  .hp-proc-overlay{display:none;background:var(--card);border-radius:16px;padding:3rem;text-align:center;border:1px solid var(--border)}
+  .hp-proc-overlay.show{display:block}
+  .hp-proc-spin{width:70px;height:70px;border:5px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .9s linear infinite;margin:0 auto 1.2rem}
+  .hp-proc-text{font-family:"Bebas Neue",sans-serif;font-size:1.5rem;letter-spacing:3px;color:var(--accent)}
+  .hp-proc-sub{color:var(--muted);font-size:.9rem;margin-top:.4rem}
+  @media(max-width:800px){.hp-main-area{grid-template-columns:1fr}.hp-modes-panel{flex-direction:row;flex-wrap:wrap;min-width:auto}.hp-mode-btn{flex:1;min-width:120px}}
+  </style>
+
+  <div class="hp-page-wrap">
+    <!-- Lock wall for non-logged users -->
     <div class="lock-wall" id="lock-enh"><div class="licon">🔒</div><h3>LOGIN REQUIRED</h3><button class="btn-dl" onclick="openLogin()">LOGIN NOW</button></div>
+
     <div id="tool-enh" style="display:none">
-      <div class="mode-row">
-        <button class="mbtn on" onclick="selMode(this,'soft')">🌸 Soft</button>
-        <button class="mbtn" onclick="selMode(this,'softv2')">🌸 Soft V2</button>
-        <button class="mbtn" onclick="selMode(this,'sharp')">🔪 Sharp</button>
+      <!-- Top bar: title + mode panel -->
+      <div class="hp-top-bar">
+        <div class="hp-top-left">
+          <h2>✨ AI Image Enhancer</h2>
+          <p>Remove blur · Sharpen details · 4K upscale — powered by AI</p>
+        </div>
+        <div class="hp-modes-panel">
+          <div class="panel-title">SELECT MODE</div>
+          <button class="hp-mode-btn on" onclick="selMode(this,'soft')">
+            <span class="hp-mode-icon">🌸</span>
+            <span class="hp-mode-text"><span class="hp-mode-name">Soft</span><span class="hp-mode-desc">Gentle enhancement</span></span>
+          </button>
+          <button class="hp-mode-btn" onclick="selMode(this,'softv2')">
+            <span class="hp-mode-icon">🌸</span>
+            <span class="hp-mode-text"><span class="hp-mode-name">Soft V2</span><span class="hp-mode-desc">Smoother skin tones</span></span>
+          </button>
+          <button class="hp-mode-btn" onclick="selMode(this,'sharp')">
+            <span class="hp-mode-icon">🔪</span>
+            <span class="hp-mode-text"><span class="hp-mode-name">Sharp</span><span class="hp-mode-desc">Maximum clarity</span></span>
+          </button>
+        </div>
       </div>
-      <div class="upload-zone" onclick="document.getElementById('enh-in').click()" id="enh-zone" ondragover="dragOver(event,'enh-zone')" ondragleave="dragLeave('enh-zone')" ondrop="dropFile(event,'enh-in','enh-zone')">
-        <input type="file" id="enh-in" accept="image/*" onchange="handleEnh(this)"/>
-        <div class="uicon">✨</div><p><strong>Upload Image</strong></p><p class="uhint">JPG · PNG · WEBP</p>
-      </div>
-      <div class="proc" id="enh-proc"><div class="pspin"></div><span>Enhancing...</span></div>
-      <div class="prev" id="enh-prev">
-        <div class="hitpaw-slider-wrap" id="enh-slider-wrap">
-          <div class="hp-label hp-label-left">BEFORE</div>
-          <div class="hp-label hp-label-right">AFTER ✨</div>
-          <img id="enh-bef" class="hp-img hp-before" src="" alt=""/>
-          <img id="enh-aft" class="hp-img hp-after" src="" alt=""/>
-          <div class="hp-handle" id="enh-handle">
-            <div class="hp-line"></div>
-            <div class="hp-btn">◀ ▶</div>
+
+      <!-- Main 2-column layout -->
+      <div class="hp-main-area">
+        <!-- Left: Upload + result -->
+        <div class="hp-left-col">
+          <!-- Upload box (hidden after upload) -->
+          <div class="hp-upload-box" id="enh-zone" onclick="document.getElementById('enh-in').click()" ondragover="dragOver(event,'enh-zone')" ondragleave="dragLeave('enh-zone')" ondrop="dropFile(event,'enh-in','enh-zone')">
+            <input type="file" id="enh-in" accept="image/*" onchange="handleEnh(this)"/>
+            <div class="hp-upload-icon">🖼️</div>
+            <h3>Drag &amp; Drop Image Here</h3>
+            <p>Or click to browse your device</p>
+            <div class="hp-upload-btn">Choose Image</div>
+            <p style="margin-top:.8rem;font-size:.78rem;color:var(--muted)">Supports JPG · PNG · WEBP · BMP</p>
+          </div>
+
+          <!-- Sample thumbnails -->
+          <div class="hp-sample-row">
+            <span class="hp-sample-label">Try a sample:</span>
+            <img class="hp-sample-thumb" src="https://picsum.photos/seed/face1/100/100" onclick="loadSampleEnh(this.src)" title="Sample face"/>
+            <img class="hp-sample-thumb" src="https://picsum.photos/seed/city2/100/100" onclick="loadSampleEnh(this.src)" title="Sample city"/>
+            <img class="hp-sample-thumb" src="https://picsum.photos/seed/nature3/100/100" onclick="loadSampleEnh(this.src)" title="Sample nature"/>
+          </div>
+
+          <!-- Processing overlay -->
+          <div class="hp-proc-overlay" id="enh-proc">
+            <div class="hp-proc-spin"></div>
+            <div class="hp-proc-text">AI ENHANCING...</div>
+            <div class="hp-proc-sub">Removing blur · Sharpening details · Upscaling to 4K</div>
+          </div>
+
+          <!-- Result slider — full width -->
+          <div class="hp-result-area" id="enh-prev">
+            <div class="hp-slider-container" id="enh-slider-wrap">
+              <span class="hp-slide-tag hp-slide-tag-l">ORIGINAL</span>
+              <span class="hp-slide-tag hp-slide-tag-r">ENHANCED ✨</span>
+              <img id="enh-bef" class="hp-slide-before" src="" alt="Before"/>
+              <img id="enh-aft" class="hp-slide-after" src="" alt="After"/>
+              <div class="hp-slide-line" id="enh-line"></div>
+              <div class="hp-slide-handle" id="enh-handle">◀▶</div>
+            </div>
+            <div class="hp-result-actions">
+              <a id="enh-dl" download="enhanced.png"><button class="hp-dl-btn">⬇ DOWNLOAD ENHANCED</button></a>
+              <button class="hp-new-btn" onclick="resetEnhancer()">↩ Try Another</button>
+            </div>
           </div>
         </div>
-        <a id="enh-dl" download="enhanced.png"><button class="btn-dl" style="margin-top:1.2rem">⬇ DOWNLOAD ENHANCED</button></a>
+
+        <!-- Right: Info card -->
+        <div class="hp-right-col">
+          <div class="hp-info-card">
+            <h4>✨ WHAT IT DOES</h4>
+            <div class="hp-feature-list">
+              <div class="hp-feature"><span class="hp-feature-icon">✅</span>Remove blur &amp; noise</div>
+              <div class="hp-feature"><span class="hp-feature-icon">✅</span>Sharpen fine details</div>
+              <div class="hp-feature"><span class="hp-feature-icon">✅</span>4K upscale (3840px)</div>
+              <div class="hp-feature"><span class="hp-feature-icon">✅</span>No watermark</div>
+              <div class="hp-feature"><span class="hp-feature-icon">✅</span>Free to download</div>
+            </div>
+          </div>
+          <div class="hp-info-card">
+            <h4>📌 TIPS</h4>
+            <div class="hp-feature-list">
+              <div class="hp-feature"><span class="hp-feature-icon">💡</span>Use <b>Soft</b> for portraits</div>
+              <div class="hp-feature"><span class="hp-feature-icon">💡</span>Use <b>Sharp</b> for landscapes</div>
+              <div class="hp-feature"><span class="hp-feature-icon">💡</span>Best on blurry/low-res images</div>
+              <div class="hp-feature"><span class="hp-feature-icon">💡</span>Drag slider to compare</div>
+            </div>
+          </div>
+        </div>
       </div>
-    </div>
-  </div>
+    </div><!-- /tool-enh -->
+  </div><!-- /hp-page-wrap -->
 </div>
 
 <!-- ═══ UPSCALER PAGE ═══ -->
@@ -453,30 +586,25 @@ nav{position:fixed;top:0;left:0;right:0;z-index:1000;background:rgba(10,10,15,.9
   <div class="modal modal-wide">
     <button class="mclose" onclick="closeModal('price-modal')">✕</button>
     <h2>🔓 UNLOCK PREMIUM</h2>
-    <p>3 hours free khatam! Unlock karo lifetime access!</p>
+    <p>Select a plan and pay securely via Stripe</p>
     <div class="pgrid" id="plan-grid">
-      <div class="pcard" onclick="selectPlan('weekly','$50',this)"><div class="period">WEEKLY</div><div class="amt">$50</div><div class="pdesc">7 days</div><button class="btn-pay">SELECT</button></div>
-      <div class="pcard feat" onclick="selectPlan('monthly','$100',this)"><div class="period">MONTHLY ⭐</div><div class="amt">$100</div><div class="pdesc">Most Popular</div><button class="btn-pay">SELECT</button></div>
-      <div class="pcard" onclick="selectPlan('yearly','$200',this)"><div class="period">YEARLY</div><div class="amt">$200</div><div class="pdesc">Full year</div><button class="btn-pay">SELECT</button></div>
-      <div class="pcard" onclick="selectPlan('lifetime','$500',this)"><div class="period">LIFETIME 💎</div><div class="amt">$500</div><div class="pdesc">Forever</div><button class="btn-pay">SELECT</button></div>
+      <div class="pcard" onclick="selectPlan('weekly','$2',this)"><div class="period">WEEKLY</div><div class="amt">$2</div><div class="pdesc">7 days</div><button class="btn-pay">SELECT</button></div>
+      <div class="pcard feat" onclick="selectPlan('monthly','$5',this)"><div class="period">MONTHLY ⭐</div><div class="amt">$5</div><div class="pdesc">Most Popular</div><button class="btn-pay">SELECT</button></div>
+      <div class="pcard" onclick="selectPlan('yearly','$15',this)"><div class="period">YEARLY</div><div class="amt">$15</div><div class="pdesc">Full year</div><button class="btn-pay">SELECT</button></div>
+      <div class="pcard" onclick="selectPlan('lifetime','$30',this)"><div class="period">LIFETIME 💎</div><div class="amt">$30</div><div class="pdesc">Forever</div><button class="btn-pay">SELECT</button></div>
     </div>
     <div class="pay-form" id="pay-form">
       <div class="pay-title" id="pay-plan-title">COMPLETE PAYMENT</div>
       <div class="fg"><label>Full Name</label><input type="text" id="pay-name" placeholder="Your full name"/></div>
-      <div class="fg"><label>Address</label><input type="text" id="pay-addr" placeholder="Street address"/></div>
-      <div class="fg-row">
-        <div class="fg"><label>City</label><input type="text" id="pay-city" placeholder="City"/></div>
-        <div class="fg"><label>Country</label><input type="text" id="pay-country" placeholder="Country"/></div>
-      </div>
-      <div class="fg"><label>Card Number</label><input type="text" id="pay-card" placeholder="1234 5678 9012 3456" maxlength="19" oninput="fmtCard(this)"/></div>
-      <div class="fg-row">
-        <div class="fg"><label>Expiry</label><input type="text" id="pay-exp" placeholder="MM/YY" maxlength="5"/></div>
-        <div class="fg"><label>CVV</label><input type="text" id="pay-cvv" placeholder="123" maxlength="3"/></div>
-      </div>
       <div class="fg"><label>Email</label><input type="email" id="pay-email" placeholder="Receipt email"/></div>
+      <!-- Stripe Card Element -->
+      <div class="fg">
+        <label>Card Details (Stripe Secure)</label>
+        <div id="stripe-card-element" style="padding:12px;border:1px solid var(--border);border-radius:8px;background:var(--surface);min-height:44px"></div>
+      </div>
       <div class="merr" id="pay-err"></div>
-      <button class="btn-sub" onclick="doPayment()">💳 COMPLETE PAYMENT</button>
-      <div style="margin-top:.8rem;color:var(--muted);font-size:.8rem;text-align:center">🔒 Secure payment</div>
+      <button class="btn-sub" id="pay-btn" onclick="doStripePayment()">💳 PAY NOW</button>
+      <div style="margin-top:.8rem;color:var(--muted);font-size:.8rem;text-align:center">🔒 Secured by Stripe · No fake payments possible</div>
     </div>
   </div>
 </div>
@@ -492,6 +620,8 @@ nav{position:fixed;top:0;left:0;right:0;z-index:1000;background:rgba(10,10,15,.9
 </div>
 
 <div class="toast" id="toast"></div>
+<script src="https://js.stripe.com/v3/"></script>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <script src="app.js"></script>
 </body>
 </html>
